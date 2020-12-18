@@ -1,0 +1,30 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/mvg/Projekt/src/RayTracer.cpp
+iostream
+-
+fstream
+-
+sstream
+-
+string
+-
+vector
+-
+cmath
+-
+limits
+-
+stdlib.h
+-
+stdio.h
+-
+time.h
+-
+

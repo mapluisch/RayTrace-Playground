@@ -1,0 +1,1 @@
+/usr/bin/c++   -Wall -std=c++11 -O3 -g  -rdynamic CMakeFiles/heat.dir/src/RayTracer.cpp.o  -o heat 
