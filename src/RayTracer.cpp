@@ -9,7 +9,8 @@
 #include "Camera.h"
 #include "Material.h"
 
-#include <SDL2/SDL.h>
+#include <opencv2/opencv.hpp>
+using namespace cv;
 
 Color ray_color(const Ray& r, const Hittable& world, int depth) {
     Hit hit;
@@ -70,15 +71,7 @@ Hittable_List random_scene() {
 
 
 int main(int argc, char* argv[]) {
-    // Open SDL2 window
-    if (SDL_Init(SDL_INIT_VIDEO) != 0){
-	    std::cout << "SDL_Init Error: " << SDL_GetError() << std::endl;
-	    return 1;
-    }
-
-
-
-
+    // CXXOPTS Init and Parsing
     // Create CXXOPTS-Argument parser for nice argument input
     cxxopts::Options options("RayTracer", "A basic RayTracer, based on 'Ray Tracing In One Weekend' by Peter Shirley, adapted and extended by Martin Pluisch.");
     options.add_options()
@@ -97,13 +90,8 @@ int main(int argc, char* argv[]) {
       std::cout << options.help() << std::endl;
       exit(0);
     }
-    
-    // Open and overwrite image file
-    std::ofstream output_image;
-    std::string output_filename = (result.count("output") ? result["output"].as<std::string>() : "output.ppm");
-    output_image.open(output_filename);
 
-    // Output-Image dimensions
+    // CXXOPTS Parsing
     // Read and store passed in arguments or default to 16:9-resolution with 50 samples per pixel
     const int image_width       = (result.count("width") ? result["width"].as<int>() : 400);
     const int image_height      = (result.count("height") ? result["height"].as<int>() : 225);
@@ -111,6 +99,15 @@ int main(int argc, char* argv[]) {
     const int max_depth         = (result.count("depth") ? result["depth"].as<int>() : 50);
     const double vfov           = (result.count("fov") ? result["fov"].as<double>() : 90);
     const bool randomize_world  = (result.count("random") ? result["random"].as<bool>() : false);
+    //
+
+    // Open and overwrite image file
+    std::ofstream output_image;
+    std::string output_filename = (result.count("output") ? result["output"].as<std::string>() : "output.ppm");
+    output_image.open(output_filename);
+
+    
+    
 
     // World
     Hittable_List world;
@@ -128,7 +125,7 @@ int main(int argc, char* argv[]) {
         world.add(make_shared<Sphere>(Point3(-1.0,    0.0, -1.0),   0.5, material_left));
         world.add(make_shared<Sphere>(Point3( 1.0,    0.0, -1.0),   0.5, material_right)); 
     }
-    
+
 
     // Camera
     Point3 camPosition (-1,1,1);
@@ -154,8 +151,16 @@ int main(int argc, char* argv[]) {
             write_color(output_image, pixel_color, samples_per_pixel);
         }
     }
-
+ 
     std::cerr << "\n-- done rendering, closing output file-stream --\n";
     // close output-image filestream
     output_image.close();
+
+    #pragma region OpenCV testing ------------------------------
+
+    cv::Mat input = cv::imread("output.ppm", IMREAD_COLOR);
+    namedWindow("Display window", WINDOW_AUTOSIZE);// Create a window for display.
+     imshow("Display window", input);
+    cv::waitKey(0);
+    #pragma endregion
 }

@@ -4,13 +4,14 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
-  "/home/mvg/BasicRayTracing/src/RayTracer.cpp" "/home/mvg/BasicRayTracing/build/CMakeFiles/RayTracer.dir/src/RayTracer.cpp.o"
+  "/Users/martinpluisch/Development/BasicRayTracing/src/RayTracer.cpp" "/Users/martinpluisch/Development/BasicRayTracing/build/CMakeFiles/RayTracer.dir/src/RayTracer.cpp.o"
   )
-set(CMAKE_CXX_COMPILER_ID "GNU")
+set(CMAKE_CXX_COMPILER_ID "Clang")
 
 # The include file search paths:
 set(CMAKE_CXX_TARGET_INCLUDE_PATH
   "../include"
+  "/usr/local/Cellar/opencv/4.5.0_5/include/opencv4"
   "/usr/local/include"
   )
 

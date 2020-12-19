@@ -66,26 +66,24 @@ SET(MY_SOURCE_FILES
 
 
 ################################################################################
-# Find Packages CXXOPTS and SDL2
+# Find Packages CXXOPTS and SFML2
 ################################################################################
 
 find_package(cxxopts REQUIRED)
-find_package(SDL2 REQUIRED)
-
+find_package( OpenCV REQUIRED )
 
 ################################################################################
 # Compiler flags
 ################################################################################
 
 INCLUDE_DIRECTORIES(
-
     ${MY_PROJECT_INCLUDE_DIR}
-    ${SDL2_INCLUDE_DIRS}
+    ${OpenCV_INCLUDE_DIRS}
 )
 
 # CMake sets additional flags for debug and release builds by using the 
 # correct build types.
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++11 -O3 -lSDL2")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 
 ################################################################################
@@ -116,8 +114,8 @@ ADD_EXECUTABLE(${PROJECT_NAME}
 ################################################################################
 
 TARGET_LINK_LIBRARIES(${PROJECT_NAME}
-    cxxopts::cxxopts
-    ${SDL2_LIBRARIES}
-)
+    cxxopts::cxxopts    
+    ${OpenCV_LIBS}
+)   
 
 
