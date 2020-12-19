@@ -27,20 +27,18 @@ Color ray_color(const Ray& r, const Hittable& world, int depth) {
 
 int main(int argc, char* argv[]) {
     // Create CXXOPTS-Argument parser for nice argument input
-    cxxopts::Options options("RayTracer", "A basic RayTracer, based on the tutorial 'Ray Tracing In One Weekend' by Peter Shirley.");
+    cxxopts::Options options("RayTracer", "A basic RayTracer, based on 'Ray Tracing In One Weekend' by Peter Shirley, adapted and extended by Martin Pluisch.");
     options.add_options()
-        // ("d,debug", "Enable debugging") // a bool parameter
-        ("w,width", "Image width in pixel", cxxopts::value<int>())
-        ("h,height", "Image height in pixel", cxxopts::value<int>())
+        ("h,help", "Print usage information")
+        ("x,width", "Image width in pixel", cxxopts::value<int>())
+        ("y,height", "Image height in pixel", cxxopts::value<int>())
         ("s,samples_per_pixel", "Samples per Pixel", cxxopts::value<int>())
         ("d,depth", "Maximum depth", cxxopts::value<int>())
         ("o,output", "Output file name", cxxopts::value<std::string>())
-        ("h,help", "Print usage")
-        // ("v,verbose", "Verbose output", cxxopts::value<bool>()->default_value("false"))
     ;
     auto result = options.parse(argc, argv);
 
-    if (result.count("help")) {
+    if (result.count("help") == 1) {
       std::cout << options.help() << std::endl;
       exit(0);
     }
@@ -60,6 +58,8 @@ int main(int argc, char* argv[]) {
     // World
     Hittable_List world;
     world.add(make_shared<Sphere>(Point3(0,0,-1), 0.5));
+    world.add(make_shared<Sphere>(Point3(-2,2,-4), 0.25));
+    world.add(make_shared<Sphere>(Point3(2,2,-4), 0.75));
     world.add(make_shared<Sphere>(Point3(0,-100.5,-1), 100));
 
     // Camera
@@ -82,7 +82,7 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    std::cerr << "\n-- done rendering, closing output-stream now --\n";
+    std::cerr << "\n-- done rendering, closing output file-stream --\n";
     // close output-image filestream
     output_image.close();
 }
