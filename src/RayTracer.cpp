@@ -29,6 +29,44 @@ Color ray_color(const Ray& r, const Hittable& world, int depth) {
     return (1.0-t)*Color(1.0, 1.0, 1.0) + t*Color(0.5, 0.7, 1.0);
 }
 
+Hittable_List random_scene() {
+    Hittable_List world;
+
+    auto ground_material = make_shared<Lambertian>(Color(0.8, 0.8, 0.0));
+    world.add(make_shared<Sphere>(Point3(0,-1000,0), 1000, ground_material));
+
+    for (int a = -5; a < 5; a++) {
+        for (int b = -5; b < 5; b++) {
+            auto choose_mat = random_double();
+            Point3 center(a + 0.9*random_double(), 0.2, b + 0.9*random_double());
+
+            if ((center - Point3(4, 0.2, 0)).length() > 0.9) {
+                shared_ptr<Material> sphere_material;
+
+                if (choose_mat < 0.6) {
+                    // diffuse
+                    auto albedo = Color::random() * Color::random();
+                    sphere_material = make_shared<Lambertian>(albedo);
+                    world.add(make_shared<Sphere>(center, 0.2, sphere_material));
+                } else if (choose_mat < 0.95) {
+                    // metal
+                    auto albedo = Color::random(0.5, 1);
+                    auto fuzz = random_double(0, 0.5);
+                    sphere_material = make_shared<Metal>(albedo, fuzz);
+                    world.add(make_shared<Sphere>(center, 0.2, sphere_material));
+                } else {
+                    // glass
+                    sphere_material = make_shared<Dielectric>(1.5);
+                    world.add(make_shared<Sphere>(center, 0.2, sphere_material));
+                }
+            }
+        }
+    }
+
+    return world;
+}
+
+
 int main(int argc, char* argv[]) {
     // Create CXXOPTS-Argument parser for nice argument input
     cxxopts::Options options("RayTracer", "A basic RayTracer, based on 'Ray Tracing In One Weekend' by Peter Shirley, adapted and extended by Martin Pluisch.");
@@ -38,7 +76,9 @@ int main(int argc, char* argv[]) {
         ("y,height", "Image height in pixel", cxxopts::value<int>())
         ("s,samples_per_pixel", "Samples per Pixel", cxxopts::value<int>())
         ("d,depth", "Maximum depth", cxxopts::value<int>())
+        ("f,fov", "Camera's vertical field of view", cxxopts::value<double>())
         ("o,output", "Output file name", cxxopts::value<std::string>())
+        ("r,random", "Boolean whether to create a random scene-world or not", cxxopts::value<bool>())
     ;
     auto result = options.parse(argc, argv);
 
@@ -58,21 +98,34 @@ int main(int argc, char* argv[]) {
     const int image_height      = (result.count("height") ? result["height"].as<int>() : 225);
     const int samples_per_pixel = (result.count("samples_per_pixel") ? result["samples_per_pixel"].as<int>() : 50);
     const int max_depth         = (result.count("depth") ? result["depth"].as<int>() : 50);
+    const double vfov           = (result.count("fov") ? result["fov"].as<double>() : 90);
+    const bool randomize_world  = (result.count("random") ? result["random"].as<bool>() : false);
 
     // World
     Hittable_List world;
-    auto material_ground = make_shared<Lambertian>(Color(0.8, 0.8, 0.0));
-    auto material_center = make_shared<Dielectric>(1.5);
-    auto material_left   = make_shared<Metal>(Color(0.2, 0.4, 0.8), 0.3);
-    auto material_right  = make_shared<Metal>(Color(0.8, 0.6, 0.2), 1.0);
+    if(randomize_world){
+        world = random_scene();
+    } else {
+        // use predefined scene
+        auto material_ground = make_shared<Lambertian>(Color(0.8, 0.8, 0.0));
+        auto material_center = make_shared<Dielectric>(1.5);
+        auto material_left   = make_shared<Metal>(Color(0.2, 0.4, 0.8), 0.3);
+        auto material_right  = make_shared<Metal>(Color(0.8, 0.6, 0.2), 1.0);
 
-    world.add(make_shared<Sphere>(Point3( 0.0, -100.5, -1.0), 100.0, material_ground));
-    world.add(make_shared<Sphere>(Point3( 0.0,    0.0, -1.0),   0.5, material_center));
-    world.add(make_shared<Sphere>(Point3(-1.0,    0.0, -1.0),   0.5, material_left));
-    world.add(make_shared<Sphere>(Point3( 1.0,    0.0, -1.0),   0.5, material_right)); 
+        world.add(make_shared<Sphere>(Point3( 0.0, -100.5, -1.0), 100.0, material_ground));
+        world.add(make_shared<Sphere>(Point3( 0.0,    0.0, -1.0),   0.5, material_center));
+        world.add(make_shared<Sphere>(Point3(-1.0,    0.0, -1.0),   0.5, material_left));
+        world.add(make_shared<Sphere>(Point3( 1.0,    0.0, -1.0),   0.5, material_right)); 
+    }
+    
 
     // Camera
-    Camera cam(image_width, image_height);
+    Point3 camPosition (-1,1,1);
+    Point3 camDirection (0,0,-1);
+    Vec3 camUp (0,1,0);
+    double camAperture = 0.0;
+    double camFocusDistance = (camPosition-camDirection).length();
+    Camera cam(camPosition, camDirection, camUp, image_width, image_height, vfov, camAperture, camFocusDistance);
 
     // Render
     std::cerr << "-- start rendering --\n";
