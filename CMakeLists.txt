@@ -77,7 +77,7 @@ INCLUDE_DIRECTORIES(
 
 # CMake sets additional flags for debug and release builds by using the 
 # correct build types.
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++11 -O3 -g")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -std=c++11 -O3")
 
 
 ################################################################################
@@ -101,18 +101,17 @@ ADD_EXECUTABLE(${PROJECT_NAME}
 
 )
 
-#####
-# Find and Include OpenCV
-#####
-find_package( OpenCV REQUIRED )
-include_directories( ${OpenCV_INCLUDE_DIRS} )
+# Adding CXXOPTS
+find_package(cxxopts REQUIRED)
+
 
 ################################################################################
 # Link targets
 ################################################################################
 
 TARGET_LINK_LIBRARIES(${PROJECT_NAME}
-${OpenCV_LIBS} 
-    
+    cxxopts::cxxopts
 
 )
+
+

@@ -1,35 +1,25 @@
 #ifndef _COLOR_H
 #define _COLOR_H
 
-#include "math.h"
+#include "Vec3.h"
+#include "Utilities.h"
+#include <iostream>
 
-class Color {
-    double red, green, blue, special;
+void write_color(std::ostream &out, Color pixel_color, int samples_per_pixel) {
+    auto r = pixel_color.x();
+    auto g = pixel_color.y();
+    auto b = pixel_color.z();
 
-    public:
-        Color();
-        Color(double, double, double, double);
-        // methods
-        double getColorRed() {return red;}
-        double getColorGreen() {return green;}
-        double getColorBlue() {return blue;}
-        double getColorSpecial() {return special;}
+        // Divide the color by the number of samples and gamma-correct for gamma=2.0.
+    auto scale = 1.0 / samples_per_pixel;
+    r = sqrt(scale * r);
+    g = sqrt(scale * g);
+    b = sqrt(scale * b);
 
-        void setColorRed(double r){red = r;}
-        void setColorGreen(double g){green = g;}
-        void setColorBlue(double b){blue = b;}
-        void setColorSpecial(double s){special = s;}
-};
-
-Color::Color () {
-    red = green = blue = 0.5;
-}
-
-Color::Color (double r, double g, double b, double s) {
-    red = r;
-    green = g;
-    blue = b;
-    special = s;
+    // Write the translated [0,255] value of each color component.
+    out << static_cast<int>(256 * clamp(r, 0.0, 0.999)) << ' '
+        << static_cast<int>(256 * clamp(g, 0.0, 0.999)) << ' '
+        << static_cast<int>(256 * clamp(b, 0.0, 0.999)) << '\n';
 }
 
 #endif

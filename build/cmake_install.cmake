@@ -1,4 +1,4 @@
-# Install script for directory: /home/mvg/Projekt
+# Install script for directory: /home/mvg/BasicRayTracing
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -45,5 +45,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/mvg/Projekt/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/home/mvg/BasicRayTracing/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

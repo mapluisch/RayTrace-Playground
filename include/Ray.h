@@ -1,28 +1,25 @@
 #ifndef _RAY_H
 #define _RAY_H
 
-#include "math.h"
-#include "Vect.h"
+#include "Vec3.h"
 
 class Ray {
-    Vect origin, direction;
+    public:
+        Ray() {}
+        Ray(const Point3& origin, const Vec3& direction)
+            : orig(origin), dir(direction)
+        {}
+
+        Point3 origin() const  { return orig; }
+        Vec3 direction() const { return dir; }
+
+        Point3 at(double t) const {
+            return orig + t*dir;
+        }
 
     public:
-        Ray();
-        Ray(Vect, Vect);
-        // methods
-        Vect getRayOrigin () { return origin; }
-        Vect getRayDirection () { return direction; }
+        Point3 orig;
+        Vec3 dir;
 };
-
-Ray::Ray () {
-    origin = Vect(0,0,0);
-    direction = Vect(1,0,0);
-}
-
-Ray::Ray (Vect _origin, Vect _direction) {
-    origin = _origin;
-    direction = _direction;
-}
 
 #endif

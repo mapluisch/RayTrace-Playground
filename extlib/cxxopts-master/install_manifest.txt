@@ -1,0 +1,4 @@
+/usr/local/lib/cmake/cxxopts/cxxopts-config.cmake
+/usr/local/lib/cmake/cxxopts/cxxopts-config-version.cmake
+/usr/local/lib/cmake/cxxopts/cxxopts-targets.cmake
+/usr/local/include/cxxopts.hpp

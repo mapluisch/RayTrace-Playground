@@ -1,143 +1,88 @@
 #include <iostream>
-#include <fstream>
-#include <sstream>
-#include <string>
-#include <vector>
-#include <cmath>
-#include <limits>
+#include <fstream>      // used for writing image to file
+#include <cxxopts.hpp>  // used for nicer argument parsing
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <time.h>
-#include "Vect.h"
-#include "Ray.h"
-#include "Camera.h"
+#include "Utilities.h"
 #include "Color.h"
-#include "Light.h"
-//#include <opencv2/opencv.hpp>
+#include "Hittable_List.h"
+#include "Sphere.h"
+#include "Camera.h"
 
-using namespace cv;
-using namespace std;
+Color ray_color(const Ray& r, const Hittable& world, int depth) {
+    Hit hit;
 
-struct RGBType {
-    double r;
-    double g;
-    double b;
-};
-
-void savebmp (const char *filename, int w, int h, int dpi, RGBType *data) {
-    FILE *f;
-    int s = 4*w*h;
-    int filesize = 54 + s;
-
-    double factor = 39.375;
-    int m = static_cast<int>(factor);
-    
-    int ppm = dpi*m;
-
-    unsigned char bmpfileheader[14] = {'B', 'M', 0,0,0,0, 0,0,0,0, 54,0,0,0};
-    unsigned char bmpinfoheader[40] = {40,0,0,0, 0,0,0,0, 0,0,0,0, 1,0,24,0};
-
-    bmpfileheader[2] = (unsigned char)(filesize);
-    bmpfileheader[3] = (unsigned char)(filesize>>8);
-    bmpfileheader[4] = (unsigned char)(filesize>>16);
-    bmpfileheader[5] = (unsigned char)(filesize>>24);
-
-    bmpinfoheader[4] = (unsigned char)(w);
-    bmpinfoheader[5] = (unsigned char)(w>>8);
-    bmpinfoheader[6] = (unsigned char)(w>>16);
-    bmpinfoheader[7] = (unsigned char)(w>>24);
-
-    bmpinfoheader[8] = (unsigned char)(h);
-    bmpinfoheader[9] = (unsigned char)(h>>8);
-    bmpinfoheader[10] = (unsigned char)(h>>16);
-    bmpinfoheader[11] = (unsigned char)(h>>24);
-
-    bmpinfoheader[21] = (unsigned char)(s);
-    bmpinfoheader[22] = (unsigned char)(s>>8);
-    bmpinfoheader[23] = (unsigned char)(s>>16);
-    bmpinfoheader[24] = (unsigned char)(s>>24);
-
-    bmpinfoheader[25] = (unsigned char)(ppm);
-    bmpinfoheader[26] = (unsigned char)(ppm>>8);
-    bmpinfoheader[27] = (unsigned char)(ppm>>16);
-    bmpinfoheader[28] = (unsigned char)(ppm>>24);
-
-    bmpinfoheader[29] = (unsigned char)(ppm);
-    bmpinfoheader[30] = (unsigned char)(ppm>>8);
-    bmpinfoheader[31] = (unsigned char)(ppm>>16);
-    bmpinfoheader[32] = (unsigned char)(ppm>>24);
-
-    f = fopen(filename, "wb");
-
-    fwrite(bmpfileheader,1,14,f);
-    fwrite(bmpinfoheader,1,40,f);
-
-    for (int i = 0; i < w*h; i++) {
-        RGBType rgb = data[i];
-        double red      = (data[i].r) * 255;
-        double green    = (data[i].g) * 255;
-        double blue     = (data[i].b) * 255;
-
-        unsigned char color[3] = {(int) floor(blue),(int) floor(green),(int) floor(red)};
-        fwrite(color,1,3,f);
+    // If we've exceeded the ray bounce limit, no more light is gathered.
+    if (depth <= 0){
+        return Color(0,0,0);
     }
-
-    fclose(f);
+    
+    if (world.hit(r, 0, infinity, hit)) {
+        Point3 target = hit.p + hit.normal + random_in_unit_sphere();
+        return 0.5 * ray_color(Ray(hit.p, target - hit.p), world, depth-1);
+    }
+    Vec3 unit_direction = unit_vector(r.direction());
+    auto t = 0.5*(unit_direction.y() + 1.0);
+    return (1.0-t)*Color(1.0, 1.0, 1.0) + t*Color(0.5, 0.7, 1.0);
 }
 
-int main (int argc, char* argv[]){
-    cout << "rendering ..." << endl;
+int main(int argc, char* argv[]) {
+    // Create CXXOPTS-Argument parser for nice argument input
+    cxxopts::Options options("RayTracer", "A basic RayTracer, based on the tutorial 'Ray Tracing In One Weekend' by Peter Shirley.");
+    options.add_options()
+        // ("d,debug", "Enable debugging") // a bool parameter
+        ("w,width", "Image width in pixel", cxxopts::value<int>())
+        ("h,height", "Image height in pixel", cxxopts::value<int>())
+        ("s,samples_per_pixel", "Samples per Pixel", cxxopts::value<int>())
+        ("d,depth", "Maximum depth", cxxopts::value<int>())
+        ("o,output", "Output file name", cxxopts::value<std::string>())
+        ("h,help", "Print usage")
+        // ("v,verbose", "Verbose output", cxxopts::value<bool>()->default_value("false"))
+    ;
+    auto result = options.parse(argc, argv);
 
-    // image related
-    int dpi = 72;
-    int width = 640;
-    int height = 480;
-    int n = width * height;
-    RGBType *pixels = new RGBType[n];
-    // 
-
-    // basic vects
-    Vect X (1,0,0);
-    Vect Y (0,1,0);
-    Vect Z (0,0,1);
-    //
-
-    // cam setup
-    Vect camPosition (3, 1.5, -4);
-
-    Vect look_at (0,0,0);
-    Vect diff_btw (camPosition.getVectX() - look_at.getVectX(), camPosition.getVectY() - look_at.getVectY(), camPosition.getVectZ() - look_at.getVectZ());
-
-    Vect camDirection = diff_btw.negative().normalize();
-    Vect camRight = Y.crossProduct(camDirection).normalize();
-    Vect camDown = camRight.crossProduct(camDirection);
-    Camera sceneCam (camPosition, camDirection, camRight, camDown);
-    // 
-
-    // basic colors
-    Color white (1.0, 1.0, 1.0, 0);
-    Color gray (0.5, 0.5, 0.5, 0);
-    Color black (0, 0, 0, 0);
+    if (result.count("help")) {
+      std::cout << options.help() << std::endl;
+      exit(0);
+    }
     
-    Color green (0.5, 1.0, 0.5, 0.3);
-    //
+    // Open and overwrite image file
+    std::ofstream output_image;
+    std::string output_filename = (result.count("output") ? result["output"].as<std::string>() : "output.ppm");
+    output_image.open(output_filename);
 
-    // light setup
-    Vect lightPosition (-7, 10, -10);
-    Light lightSource (lightPosition, white);
-    //
+    // Output-Image dimensions
+    // Read and store passed in arguments or default to 16:9-resolution with 50 samples per pixel
+    const int image_width       = (result.count("width") ? result["width"].as<int>() : 400);
+    const int image_height      = (result.count("height") ? result["height"].as<int>() : 225);
+    const int samples_per_pixel = (result.count("samples_per_pixel") ? result["samples_per_pixel"].as<int>() : 50);
+    const int max_depth         = (result.count("depth") ? result["depth"].as<int>() : 50);
 
+    // World
+    Hittable_List world;
+    world.add(make_shared<Sphere>(Point3(0,0,-1), 0.5));
+    world.add(make_shared<Sphere>(Point3(0,-100.5,-1), 100));
 
-    int currentPixel = 0;
-    for(int x = 0; x < width; x++) {
-        for (int y = 0; y < height; y++) {
-            currentPixel = y*width + x;
-            pixels[currentPixel].r = 155;
-            pixels[currentPixel].g = 155;
-            pixels[currentPixel].b = 155;
+    // Camera
+    Camera cam(image_width, image_height);
+
+    // Render
+    std::cerr << "-- start rendering --\n";
+    output_image << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+    for (int j = image_height-1; j >= 0; --j) {
+        std::cerr << "\r-- scanlines remaining: " << j << ' ' << std::flush;
+        for (int i = 0; i < image_width; ++i) {
+            Color pixel_color(0, 0, 0);
+            for (int s = 0; s < samples_per_pixel; ++s) {
+                auto u = (i + random_double()) / (image_width-1);
+                auto v = (j + random_double()) / (image_height-1);
+                Ray r = cam.get_ray(u, v);
+                pixel_color += ray_color(r, world, max_depth);
+            }
+            write_color(output_image, pixel_color, samples_per_pixel);
         }
     }
 
-    savebmp("scene.bmp", width, height, dpi, pixels);
+    std::cerr << "\n-- done rendering, closing output-stream now --\n";
+    // close output-image filestream
+    output_image.close();
 }
