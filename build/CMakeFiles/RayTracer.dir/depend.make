@@ -5,6 +5,7 @@ CMakeFiles/RayTracer.dir/src/RayTracer.cpp.o: ../include/Camera.h
 CMakeFiles/RayTracer.dir/src/RayTracer.cpp.o: ../include/Color.h
 CMakeFiles/RayTracer.dir/src/RayTracer.cpp.o: ../include/Hittable.h
 CMakeFiles/RayTracer.dir/src/RayTracer.cpp.o: ../include/Hittable_List.h
+CMakeFiles/RayTracer.dir/src/RayTracer.cpp.o: ../include/Material.h
 CMakeFiles/RayTracer.dir/src/RayTracer.cpp.o: ../include/Ray.h
 CMakeFiles/RayTracer.dir/src/RayTracer.cpp.o: ../include/Sphere.h
 CMakeFiles/RayTracer.dir/src/RayTracer.cpp.o: ../include/Utilities.h

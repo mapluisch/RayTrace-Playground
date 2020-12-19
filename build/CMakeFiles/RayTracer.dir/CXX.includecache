@@ -21,6 +21,8 @@ iostream
 ../include/Hittable.h
 Ray.h
 ../include/Ray.h
+Utilities.h
+../include/Utilities.h
 
 ../include/Hittable_List.h
 Hittable.h
@@ -29,6 +31,10 @@ memory
 -
 vector
 -
+
+../include/Material.h
+Utilities.h
+../include/Utilities.h
 
 ../include/Ray.h
 Vec3.h
@@ -77,6 +83,8 @@ Sphere.h
 /home/mvg/BasicRayTracing/src/Sphere.h
 Camera.h
 /home/mvg/BasicRayTracing/src/Camera.h
+Material.h
+/home/mvg/BasicRayTracing/src/Material.h
 
 /usr/local/include/cxxopts.hpp
 cctype

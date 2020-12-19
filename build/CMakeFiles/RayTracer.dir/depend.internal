@@ -6,6 +6,7 @@ CMakeFiles/RayTracer.dir/src/RayTracer.cpp.o
  ../include/Color.h
  ../include/Hittable.h
  ../include/Hittable_List.h
+ ../include/Material.h
  ../include/Ray.h
  ../include/Sphere.h
  ../include/Utilities.h

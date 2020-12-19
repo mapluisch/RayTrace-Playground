@@ -2,11 +2,15 @@
 #define _HITTABLE_H
 
 #include "Ray.h"
+#include "Utilities.h"
+
+class Material;
 
 struct Hit {
     Point3 p;
     Vec3 normal;
     double t;
+    shared_ptr<Material> mat_ptr;
     bool front_face;
 
     inline void set_face_normal(const Ray& r, const Vec3& outward_normal) {
