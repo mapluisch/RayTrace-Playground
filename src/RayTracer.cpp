@@ -9,6 +9,8 @@
 #include "Camera.h"
 #include "Material.h"
 
+#include <SDL2/SDL.h>
+
 Color ray_color(const Ray& r, const Hittable& world, int depth) {
     Hit hit;
 
@@ -68,6 +70,15 @@ Hittable_List random_scene() {
 
 
 int main(int argc, char* argv[]) {
+    // Open SDL2 window
+    if (SDL_Init(SDL_INIT_VIDEO) != 0){
+	    std::cout << "SDL_Init Error: " << SDL_GetError() << std::endl;
+	    return 1;
+    }
+
+
+
+
     // Create CXXOPTS-Argument parser for nice argument input
     cxxopts::Options options("RayTracer", "A basic RayTracer, based on 'Ray Tracing In One Weekend' by Peter Shirley, adapted and extended by Martin Pluisch.");
     options.add_options()

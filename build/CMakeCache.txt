@@ -206,6 +206,9 @@ RayTracer_BINARY_DIR:STATIC=/home/mvg/BasicRayTracing/build
 //Value Computed by CMake
 RayTracer_SOURCE_DIR:STATIC=/home/mvg/BasicRayTracing
 
+//The directory containing a CMake configuration file for SDL2.
+SDL2_DIR:PATH=/usr/local/lib/cmake/SDL2
+
 //The directory containing a CMake configuration file for cxxopts.
 cxxopts_DIR:PATH=/usr/local/lib/cmake/cxxopts
 

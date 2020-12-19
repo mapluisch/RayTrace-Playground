@@ -4,7 +4,7 @@ if("${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}" LESS 2.5)
    message(FATAL_ERROR "CMake >= 2.6.0 required")
 endif()
 cmake_policy(PUSH)
-cmake_policy(VERSION 2.6)
+cmake_policy(VERSION 2.6...3.17)
 #----------------------------------------------------------------
 # Generated CMake target import file.
 #----------------------------------------------------------------
@@ -49,7 +49,7 @@ unset(_expectedTargets)
 add_library(cxxopts::cxxopts INTERFACE IMPORTED)
 
 set_target_properties(cxxopts::cxxopts PROPERTIES
-  INTERFACE_INCLUDE_DIRECTORIES "/home/mvg/BasicRayTracing/extlib/cxxopts-master/include"
+  INTERFACE_INCLUDE_DIRECTORIES "/Users/martinpluisch/Development/BasicRayTracing/extlib/cxxopts-master/include"
 )
 
 # This file does not depend on other imported targets which have

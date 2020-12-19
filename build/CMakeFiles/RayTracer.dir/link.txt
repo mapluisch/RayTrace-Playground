@@ -1,1 +1,1 @@
-/usr/bin/c++   -Wall -std=c++11 -O3  -rdynamic CMakeFiles/RayTracer.dir/src/RayTracer.cpp.o  -o RayTracer 
+/usr/bin/c++   -Wall -std=c++11 -O3 -lSDL2  -rdynamic CMakeFiles/RayTracer.dir/src/RayTracer.cpp.o  -o RayTracer 
