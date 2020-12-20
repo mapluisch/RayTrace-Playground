@@ -54,10 +54,7 @@ void displayProgressbar(float progress) {
     int val = (int) (progress * 100);
     int lpad = (int) (progress * PBWIDTH);
     int rpad = PBWIDTH - lpad;
-    printf("\r%s[Rendering... %3d%%%s] [%s%.*s%*s%s]", BOLDYELLOW, val, RESET, BLUE, lpad, PBSTR, rpad, "", RESET);
-    if(val == 100){
-        std::cout << BOLDYELLOW << "[Rendered.]" << RESET << std::endl;
-    }
+    printf("\r[%sRendering... %3d%%%s] [%s%.*s%*s%s]", BOLDYELLOW, val, RESET, BLUE, lpad, PBSTR, rpad, "", RESET);
     fflush(stdout);
 }
 

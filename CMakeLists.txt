@@ -83,7 +83,7 @@ INCLUDE_DIRECTORIES(
 
 # CMake sets additional flags for debug and release builds by using the 
 # correct build types.
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O3 -march=native")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O3")
 
 
 ################################################################################

@@ -85,6 +85,8 @@ Camera.h
 /Users/martinpluisch/Development/BasicRayTracing/src/Camera.h
 Material.h
 /Users/martinpluisch/Development/BasicRayTracing/src/Material.h
+math.h
+-
 opencv2/opencv.hpp
 -
 

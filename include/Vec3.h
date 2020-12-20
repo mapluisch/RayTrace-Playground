@@ -15,6 +15,10 @@ class Vec3 {
         double y() const { return e[1]; }
         double z() const { return e[2]; }
 
+        void setX(double x){ e[0] = x; }
+        void setY(double y){ e[1] = y; }
+        void setZ(double z){ e[2] = z; }
+
         Vec3 operator-() const { return Vec3(-e[0], -e[1], -e[2]); }
         double operator[](int i) const { return e[i]; }
         double& operator[](int i) { return e[i]; }
@@ -57,6 +61,19 @@ class Vec3 {
             // Return true if the vector is close to zero in all dimensions.
             const auto s = 1e-8;
             return (fabs(e[0]) < s) && (fabs(e[1]) < s) && (fabs(e[2]) < s);
+        }
+
+        
+        // use rotation matrix (and subsequent calculations) to rotate using x and z, while fixating y = 0
+        void rotateAroundPoint (Vec3 pivot, int rotationAngle){
+            // translate degree input to radians, degrees are more intuitive to use as input, for me at least :)
+            double radians = rotationAngle * pi / 180; 
+            double x1 = pivot.x();
+            double z1 = pivot.z();
+            double xpos = x1 + cos(radians) * (x() - x1) - sin(radians) * (z() - z1);
+            double zpos = z1 + sin(radians) * (x() - x1) + cos(radians) * (z() - z1);
+            setX(xpos);
+            setZ(zpos);
         }
 
     public:
@@ -151,5 +168,6 @@ Vec3 refract(const Vec3& uv, const Vec3& n, double etai_over_etat) {
     Vec3 r_out_parallel = -sqrt(fabs(1.0 - r_out_perp.length_squared())) * n;
     return r_out_perp + r_out_parallel;
 }
+
 
 #endif

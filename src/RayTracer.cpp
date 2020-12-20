@@ -8,6 +8,7 @@
 #include "Sphere.h"
 #include "Camera.h"
 #include "Material.h"
+#include <math.h>
 
 #include <opencv2/opencv.hpp>
 using namespace cv;
@@ -85,18 +86,10 @@ Hittable_List random_scene() {
 
 
 
-void renderScene(Point3 camPosition, Mat& image){
-    // Camera
-    Point3 camDirection = camPosition + Point3(0,0,-1);
-    Vec3 camUp (0,1,0);
-    double camAperture = 0.0;
-    double camFocusDistance = (camPosition-camDirection).length();
-    Camera cam(camPosition, camDirection, camUp, image_width, image_height, vfov, camAperture, camFocusDistance);
-
-    // Render
+void renderScene(Camera& cam, Mat& image){
     for (int j = image_height-1; j >= 0; --j) {
         float progress = (float) (image_height - j)/ (float) image_height;
-        // displayProgressbar(progress);
+        displayProgressbar(progress);
         for (int i = 0; i < image_width; ++i) {
             Color pixel_color(0, 0, 0);
             for (int s = 0; s < samples_per_pixel; ++s) {
@@ -119,7 +112,12 @@ void renderScene(Point3 camPosition, Mat& image){
         }
     }
 }
- 
+
+void printExploreWelcomeMessage(){
+    // show short intro message
+    std::cout << BOLDRED << "Welcome to my BasicRayTracer!" << RESET << std::endl;
+    std::cout << BOLDWHITE << "[W-A-S-D / arrow-keys to move and rotate, 1-2 to move up and down, Q-E to change the FOV, SPACE to render, ESC to quit]\n" << RESET << std::endl;
+}
 
 int main(int argc, char* argv[]) {
     // CXXOPTS Init and Parsing
@@ -155,13 +153,24 @@ int main(int argc, char* argv[]) {
     //
     
     if(explore){
-        // show short intro message
-        std::cout << BOLDRED << "Welcome to my BasicRayTracer!" << RESET << std::endl;
-        std::cout << BOLDWHITE << "[W-A-S-D to move, Q-E to rotate, SPACE to render, ESC to quit]\n" << RESET << std::endl;
+        printExploreWelcomeMessage();
     }
 
-    // World
-    
+    // Exploration vars
+    // hardcoded possible cam rotations (= cam lookat directions)
+    float rotationAngle = 10;
+    float exploreStepSize = 0.1; // units to move per arrow-keypress
+    float vfovStep = 1;
+    // Generate Camera
+    Point3 currentCamPosition (0,0,0);
+    Point3 camDirection = currentCamPosition + Vec3(0,0,-1);
+    Vec3 camUp (0,1,0);
+    double camAperture = 0.0;
+    double camFocusDistance = (currentCamPosition-camDirection).length();
+    Camera cam(currentCamPosition, camDirection, camUp, image_width, image_height, vfov, camAperture, camFocusDistance);
+
+
+    // Generate World    
     if(randomize_world){
         world = random_scene();
     } else {
@@ -177,34 +186,50 @@ int main(int argc, char* argv[]) {
         world.add(make_shared<Sphere>(Point3( 1.0,    0.0, -1.0),   0.5, material_right)); 
     }
 
-    Mat image (image_height, image_width, CV_8UC3, Scalar(0,0,0));
-    Point3 currentCamPosition (0,0,0);
-    renderScene(currentCamPosition, image);
+    // create image cv2-mat
+    Mat image (image_height, image_width, CV_8UC3, Scalar(0,0,0));    
+    // render initial scene-image
+    renderScene(cam, image);
 
     #pragma region OpenCV testing ------------------------------
     if(explore){
-        float explore_step_size = 0.1; // units to move per arrow-keypress     
+        
         while(explore){
             // set low-quality setting for faster rendering
-            samples_per_pixel = 1;
-            max_depth = 2;
+            samples_per_pixel = 2;
+            max_depth = 5;
             image_width = 400;
             image_height = 225;       
             
-            namedWindow("RayTracer", WINDOW_AUTOSIZE);// Create a window for display.
+            namedWindow("RayTracer", WINDOW_AUTOSIZE);
             imshow("RayTracer", image);
             
             char key = cv::waitKey(0);
-            std::cout<<key<<std::endl;
 
-            if (key == 2){ // left arrow
-                currentCamPosition = currentCamPosition + Point3(-explore_step_size,0,0);
-            } else if (key == 0 || key == 87 || key == 119){ // up arrow or uppper/lower-case w
-                currentCamPosition = currentCamPosition + Point3(0,0,-explore_step_size);
-            } else if (key == 3){ // right arrow
-                currentCamPosition = currentCamPosition + Point3(explore_step_size,0,0);
-            } else if (key == 1){ // dowm arrow
-                currentCamPosition = currentCamPosition + Point3(0,0,explore_step_size);
+            if(key == 'e'){
+                vfov -= vfovStep;
+                cam.updateFOV(image_width, image_height, vfov, camAperture, camFocusDistance);
+            } else if (key == 'q'){
+                vfov += vfovStep;
+                cam.updateFOV(image_width, image_height, vfov, camAperture, camFocusDistance);
+            }
+
+            if(key == '1'){
+                cam.moveCamera(currentCamPosition - Vec3(0,exploreStepSize,0), camDirection, image_width, image_height, vfov, camAperture, camFocusDistance);
+            } else if(key == '2'){
+                cam.moveCamera(currentCamPosition + Vec3(0,exploreStepSize,0), camDirection, image_width, image_height, vfov, camAperture, camFocusDistance);
+            }
+
+            if (key == 2||key == 'a'||key == 'A'){ // left arrow
+                camDirection.rotateAroundPoint(currentCamPosition, -rotationAngle);
+                cam.rotateCamera(camDirection,image_width, image_height, vfov, camAperture, camFocusDistance);
+            } else if (key == 0||key == 'w'||key == 'W'){ // up arrow or uppper/lower-case w
+                cam.moveCamera(camDirection * exploreStepSize, camDirection, image_width, image_height, vfov, camAperture, camFocusDistance);
+            } else if (key == 3||key == 'd'||key == 'D'){ // right arrow
+                camDirection.rotateAroundPoint(currentCamPosition, rotationAngle);
+                cam.rotateCamera(camDirection,image_width, image_height, vfov, camAperture, camFocusDistance);
+            } else if (key == 1||key == 's'||key == 'S'){ // down arrow
+                cam.moveCamera(camDirection * -exploreStepSize, camDirection, image_width, image_height, vfov, camAperture, camFocusDistance);
             } else if (key == 32){ // spacebar -> render image in 1080p
                 // fully render
                 samples_per_pixel = 20;
@@ -216,7 +241,7 @@ int main(int argc, char* argv[]) {
             } else if (key == 27){ // escape, end loop
                 explore = false;
             }
-            renderScene(currentCamPosition, image);
+            renderScene(cam, image);
         }   
     } else {
         namedWindow("RayTracer", WINDOW_AUTOSIZE);// Create a window for display.
