@@ -55,7 +55,7 @@ Hittable_List random_scene() {
     for (int a = -5; a < 5; a++) {
         for (int b = -5; b < 5; b++) {
             auto choose_mat = random_double();
-            Point3 center(a + 0.9*random_double(), 0, b + 0.9*random_double());
+            Point3 center(a + 0.9*random_double(), 1, b + 0.9*random_double());
 
             if ((center - Point3(4, 0, 0)).length() > 0.9) {
                 shared_ptr<Material> sphere_material;
@@ -64,17 +64,17 @@ Hittable_List random_scene() {
                     // diffuse
                     auto albedo = Color::random() * Color::random();
                     sphere_material = make_shared<Lambertian>(albedo);
-                    world.add(make_shared<Sphere>(center, 0, sphere_material));
+                    world.add(make_shared<Sphere>(center, 1, sphere_material));
                 } else if (choose_mat < 0.95) {
                     // metal
                     auto albedo = Color::random(0.5, 1);
                     auto fuzz = random_double(0, 0.5);
                     sphere_material = make_shared<Metal>(albedo, fuzz);
-                    world.add(make_shared<Sphere>(center, 0, sphere_material));
+                    world.add(make_shared<Sphere>(center, 1, sphere_material));
                 } else {
                     // glass
                     sphere_material = make_shared<Dielectric>(1.5);
-                    world.add(make_shared<Sphere>(center, 0, sphere_material));
+                    world.add(make_shared<Sphere>(center, 1, sphere_material));
                 }
             }
         }
@@ -117,6 +117,20 @@ void printExploreWelcomeMessage(){
     // show short intro message
     std::cout << BOLDRED << "Welcome to my BasicRayTracer!" << RESET << std::endl;
     std::cout << BOLDWHITE << "[W-A-S-D / arrow-keys to move and rotate, 1-2 to move up and down, Q-E to change the FOV, SPACE to render, ESC to quit]\n" << RESET << std::endl;
+}
+
+void setLowQualityRender() {
+    samples_per_pixel = 2;
+    max_depth = 5;
+    image_width = 400;
+    image_height = 225;
+}
+
+void setHighQualityRender() {
+    samples_per_pixel = 100;
+    max_depth = 20;
+    image_width = 1280;
+    image_height = 720;
 }
 
 int main(int argc, char* argv[]) {
@@ -188,18 +202,16 @@ int main(int argc, char* argv[]) {
 
     // create image cv2-mat
     Mat image (image_height, image_width, CV_8UC3, Scalar(0,0,0));    
+    // overwrite standard render-quality settings for faster first-frame rendering in explore mode
+    if(explore) setLowQualityRender();
     // render initial scene-image
     renderScene(cam, image);
 
-    #pragma region OpenCV testing ------------------------------
-    if(explore){
-        
+    #pragma region World-Exploring through movement, displayed in OpenCV window
+    if(explore){        
         while(explore){
             // set low-quality setting for faster rendering
-            samples_per_pixel = 2;
-            max_depth = 5;
-            image_width = 400;
-            image_height = 225;       
+            setLowQualityRender();      
             
             namedWindow("RayTracer", WINDOW_AUTOSIZE);
             imshow("RayTracer", image);
@@ -231,11 +243,7 @@ int main(int argc, char* argv[]) {
             } else if (key == 1||key == 's'||key == 'S'){ // down arrow
                 cam.moveCamera(camDirection * -exploreStepSize, camDirection, image_width, image_height, vfov, camAperture, camFocusDistance);
             } else if (key == 32){ // spacebar -> render image in 1080p
-                // fully render
-                samples_per_pixel = 20;
-                max_depth = 20;
-                image_width = 1280;
-                image_height = 720;
+                setHighQualityRender();
                 resize(image, image, cv::Size(image_width, image_height));
                 resizeWindow("RayTracer", image_width, image_height);
             } else if (key == 27){ // escape, end loop
