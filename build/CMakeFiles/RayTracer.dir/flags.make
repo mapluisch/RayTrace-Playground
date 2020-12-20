@@ -6,5 +6,5 @@ CXX_DEFINES =
 
 CXX_INCLUDES = -I/Users/martinpluisch/Development/BasicRayTracing/include -isystem /usr/local/Cellar/opencv/4.5.0_5/include/opencv4 -isystem /usr/local/include
 
-CXX_FLAGS =  -std=c++11 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk -std=gnu++11
+CXX_FLAGS =  -std=c++11 -O3 -march=native -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX11.1.sdk -std=gnu++11
 

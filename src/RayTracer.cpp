@@ -82,6 +82,9 @@ Hittable_List random_scene() {
     return world;
 }
 
+
+
+
 void renderScene(Point3 camPosition, Mat& image){
     // Camera
     Point3 camDirection = camPosition + Point3(0,0,-1);
@@ -91,9 +94,9 @@ void renderScene(Point3 camPosition, Mat& image){
     Camera cam(camPosition, camDirection, camUp, image_width, image_height, vfov, camAperture, camFocusDistance);
 
     // Render
-    std::cerr << "-- start rendering --\n";
     for (int j = image_height-1; j >= 0; --j) {
-        std::cerr << "\r-- scanlines remaining: " << j << ' ' << std::flush;
+        float progress = (float) (image_height - j)/ (float) image_height;
+        // displayProgressbar(progress);
         for (int i = 0; i < image_width; ++i) {
             Color pixel_color(0, 0, 0);
             for (int s = 0; s < samples_per_pixel; ++s) {
@@ -102,32 +105,20 @@ void renderScene(Point3 camPosition, Mat& image){
                 Ray r = cam.get_ray(u, v);
                 pixel_color += ray_color(r, world, max_depth);
             }
-            
             auto r = pixel_color.x();
             auto g = pixel_color.y();
             auto b = pixel_color.z();
-
-                // Divide the color by the number of samples and gamma-correct for gamma=2.0.
+            //Divide the color by the number of samples and gamma-correct for gamma=2.0.
             auto scale = 1.0 / samples_per_pixel;
             r = sqrt(scale * r);
             g = sqrt(scale * g);
             b = sqrt(scale * b);    
 
-            // slow, but working
-            // Vec3b color = image.at<Vec3b>(Point(i,image_height-j));
-            // color[0] = b*255; color[1] = g*255; color[2] = r*255;
-            // image.at<Vec3b>(Point(i,image_height-j)) = color;
             RGB& rgb = image.ptr<RGB>(image_height - j)[i];
             rgb.blue = b*255; rgb.green = g*255; rgb.red = r*255;
-
         }
     }
- 
-    std::cerr << "\n-- done rendering, closing output file-stream --\n";
-    // close output-image filestream
 }
-
-
  
 
 int main(int argc, char* argv[]) {
@@ -162,14 +153,12 @@ int main(int argc, char* argv[]) {
     randomize_world     = (result.count("random") ? result["random"].as<bool>() : false);
     bool explore        = (result.count("explore") ? result["explore"].as<bool>() : false);
     //
-
-    // // Open and overwrite image file
-    // std::ofstream output_image;
-    // std::string output_filename = (result.count("output") ? result["output"].as<std::string>() : "output.ppm");
-    // output_image.open(output_filename);
-
     
-    
+    if(explore){
+        // show short intro message
+        std::cout << BOLDRED << "Welcome to my BasicRayTracer!" << RESET << std::endl;
+        std::cout << BOLDWHITE << "[W-A-S-D to move, Q-E to rotate, SPACE to render, ESC to quit]\n" << RESET << std::endl;
+    }
 
     // World
     
@@ -190,23 +179,23 @@ int main(int argc, char* argv[]) {
 
     Mat image (image_height, image_width, CV_8UC3, Scalar(0,0,0));
     Point3 currentCamPosition (0,0,0);
+    renderScene(currentCamPosition, image);
 
     #pragma region OpenCV testing ------------------------------
     if(explore){
-        float explore_step_size = 0.25;        
+        float explore_step_size = 0.1; // units to move per arrow-keypress     
         while(explore){
             // set low-quality setting for faster rendering
             samples_per_pixel = 1;
             max_depth = 2;
             image_width = 400;
-            image_height = 225;
-            
-
+            image_height = 225;       
             
             namedWindow("RayTracer", WINDOW_AUTOSIZE);// Create a window for display.
             imshow("RayTracer", image);
             
             char key = cv::waitKey(0);
+            std::cout<<key<<std::endl;
 
             if (key == 2){ // left arrow
                 currentCamPosition = currentCamPosition + Point3(-explore_step_size,0,0);
@@ -216,12 +205,12 @@ int main(int argc, char* argv[]) {
                 currentCamPosition = currentCamPosition + Point3(explore_step_size,0,0);
             } else if (key == 1){ // dowm arrow
                 currentCamPosition = currentCamPosition + Point3(0,0,explore_step_size);
-            } else if (key == 32){ // spacebar
+            } else if (key == 32){ // spacebar -> render image in 1080p
                 // fully render
-                samples_per_pixel = 25;
-                max_depth = 10;
-                image_width = 960;
-                image_height = 540;
+                samples_per_pixel = 20;
+                max_depth = 20;
+                image_width = 1280;
+                image_height = 720;
                 resize(image, image, cv::Size(image_width, image_height));
                 resizeWindow("RayTracer", image_width, image_height);
             } else if (key == 27){ // escape, end loop

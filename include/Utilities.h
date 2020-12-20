@@ -41,6 +41,26 @@ inline double clamp(double x, double min, double max) {
     return x;
 }
 
+// source: https://stackoverflow.com/questions/14539867/how-to-display-a-progress-indicator-in-pure-c-c-cout-printf
+// a bit modified by me, using unix color codes from https://stackoverflow.com/questions/9158150/colored-output-in-c/9158263
+#define PBSTR "||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||"
+#define PBWIDTH 60
+#define BLUE            "\033[34m" 
+#define BOLDYELLOW      "\033[1m\033[33m"
+#define BOLDRED         "\033[1m\033[31m"
+#define BOLDWHITE       "\033[1m\033[37m"  
+#define RESET           "\033[0m"
+void displayProgressbar(float progress) {
+    int val = (int) (progress * 100);
+    int lpad = (int) (progress * PBWIDTH);
+    int rpad = PBWIDTH - lpad;
+    printf("\r%s[Rendering... %3d%%%s] [%s%.*s%*s%s]", BOLDYELLOW, val, RESET, BLUE, lpad, PBSTR, rpad, "", RESET);
+    if(val == 100){
+        std::cout << BOLDYELLOW << "[Rendered.]" << RESET << std::endl;
+    }
+    fflush(stdout);
+}
+
 // Common Headers
 #include "Ray.h"
 #include "Vec3.h"
