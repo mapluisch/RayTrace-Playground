@@ -115,8 +115,8 @@ void renderScene(Camera& cam, Mat& image){
 
 void printExploreWelcomeMessage(){
     // show short intro message
-    std::cout << BOLDRED << "Welcome to my BasicRayTracer!" << RESET << std::endl;
-    std::cout << BOLDWHITE << "[W-A-S-D / arrow-keys to move and rotate, 1-2 to move up and down, Q-E to change the FOV, SPACE to render, ESC to quit]\n" << RESET << std::endl;
+    std::cout << BOLDRED << "Welcome to my BasicRayTracer-Explorer!" << RESET << std::endl;
+    std::cout << BOLDWHITE << "[W-A-S-D / arrow-keys to move and rotate]\n[1-2 to move up and down]\n[3-4 to tilt up and down]\n[Q-E to zoom]\n[SPACE to render scene in high quality]\n[ESC to quit]\n" << RESET << std::endl;
 }
 
 void setLowQualityRender() {
@@ -232,14 +232,24 @@ int main(int argc, char* argv[]) {
                 cam.moveCamera(currentCamPosition + Vec3(0,exploreStepSize,0), camDirection, image_width, image_height, vfov, camAperture, camFocusDistance);
             }
 
+            if (key == '3'){
+                camDirection = camDirection - Vec3(0,exploreStepSize,0);
+                cam.rotateCamera(camDirection, image_width, image_height, vfov, camAperture, camFocusDistance);
+            } else if (key == '4'){
+                camDirection = camDirection + Vec3(0,exploreStepSize,0);
+                cam.rotateCamera(camDirection, image_width, image_height, vfov, camAperture, camFocusDistance);
+            }
+
+
+
             if (key == 2||key == 'a'||key == 'A'){ // left arrow
                 camDirection.rotateAroundPoint(currentCamPosition, -rotationAngle);
-                cam.rotateCamera(camDirection,image_width, image_height, vfov, camAperture, camFocusDistance);
+                cam.rotateCamera(camDirection, image_width, image_height, vfov, camAperture, camFocusDistance);
             } else if (key == 0||key == 'w'||key == 'W'){ // up arrow or uppper/lower-case w
                 cam.moveCamera(camDirection * exploreStepSize, camDirection, image_width, image_height, vfov, camAperture, camFocusDistance);
             } else if (key == 3||key == 'd'||key == 'D'){ // right arrow
                 camDirection.rotateAroundPoint(currentCamPosition, rotationAngle);
-                cam.rotateCamera(camDirection,image_width, image_height, vfov, camAperture, camFocusDistance);
+                cam.rotateCamera(camDirection, image_width, image_height, vfov, camAperture, camFocusDistance);
             } else if (key == 1||key == 's'||key == 'S'){ // down arrow
                 cam.moveCamera(camDirection * -exploreStepSize, camDirection, image_width, image_height, vfov, camAperture, camFocusDistance);
             } else if (key == 32){ // spacebar -> render image in 1080p
