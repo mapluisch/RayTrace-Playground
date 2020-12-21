@@ -52,10 +52,10 @@ inline double clamp(double x, double min, double max) {
 #define RESET           "\033[0m"
 
 void displayProgressbar(float progress) {
-    int val = (int) (progress * 100);
+    float val = (progress * 100);
     int lpad = (int) (progress * PBWIDTH);
     int rpad = PBWIDTH - lpad;
-    printf("\r[%sRendering... %3d%%%s] [%s%.*s%*s%s]", BOLDYELLOW, val, RESET, BLUE, lpad, PBSTR, rpad, "", RESET);
+    printf("\r[%sRendering... %3.2f%%%s] [%s%.*s%*s%s]", BOLDYELLOW, val, RESET, BLUE, lpad, PBSTR, rpad, "", RESET);
     fflush(stdout);
 }
 

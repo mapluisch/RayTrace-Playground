@@ -97,10 +97,11 @@ Hittable_List modified_cornell() {
     auto white  = make_shared<Lambertian>(Color(.73, .73, .73));
     auto green  = make_shared<Lambertian>(Color(.12, .45, .15));
     auto yellow = make_shared<Lambertian>(Color(0.9, 0.8, 0.1));
-    auto light  = make_shared<Diffuse_Light>(Color(4,4,4));
+    auto light  = make_shared<Diffuse_Light>(Color(1,1,1));
     auto mirror = make_shared<Metal>(Color(0.7,0.7,0.7), 0.0);
     auto metal  = make_shared<Metal>(Color(0.2, 0.4, 0.8), 0.3);
     auto glass  = make_shared<Dielectric>(1.5);
+    auto pertext = make_shared<Noise_Texture>(0.1);
 
 
     // left
@@ -117,11 +118,12 @@ Hittable_List modified_cornell() {
     objects.add(make_shared<XY_Rect>(-5, 5, -5, 5, 0.1, white));
 
     // light top
-    objects.add(make_shared<XZ_Rect>(-2.5, 2.5, -7.5, -2.5, 5, light));
+    objects.add(make_shared<XZ_Rect>(-0.5, 0.5, -10, 0, 5, light));
     // light bar left
-    // objects.add(make_shared<YZ_Rect>(-1, 1, -10, 0, -5, light));
+    objects.add(make_shared<YZ_Rect>(-1, 1, -10, 0, -5, light));
     // light bar right
-    // objects.add(make_shared<YZ_Rect>(-1, 1, -10, 0, 5, light));
+    objects.add(make_shared<YZ_Rect>(-1, 1, -10, 0, 5, light));
+    objects.add(make_shared<XZ_Rect>(-0.5, 0.5, -10, 0, -5, light));
 
     // boxes
     objects.add(make_shared<Box>(Point3(-3, -5, -8), Point3(-1, 1, -6), metal));
@@ -140,6 +142,29 @@ Hittable_List modified_cornell() {
     objects.add(make_shared<Sphere>(Point3( 1, 1, -3.0), 0.2, glass));
     return objects;
 }
+
+Hittable_List test_scene() {
+    // background = Color(0.6,0.7,1);
+
+    Hittable_List objects;
+
+    auto perlinNoise = make_shared<Noise_Texture>(4);
+
+    auto material_ground = make_shared<Lambertian>(Color(0.8, 0.8, 0.0));
+    auto material_center = make_shared<Dielectric>(1.5);
+    auto material_left   = make_shared<Metal>(Color(0.2, 0.4, 0.8), 0.2);
+    auto material_right  = make_shared<Lambertian>(perlinNoise);
+    auto light = make_shared<Diffuse_Light>(Color(1,1,1));
+
+    objects.add(make_shared<XY_Rect>(-2, 2, 0, 2, -2, light));
+    // objects.add(make_shared<Sphere>(Point3( 0.0, -100.5, -1.0), 100.0, material_ground));
+    // objects.add(make_shared<Sphere>(Point3( 0.0,    0.0, -1.0),   0.5, material_center));
+    objects.add(make_shared<Sphere>(Point3(-1.0,    0.0, -1.0),   0.5, material_left));
+    // objects.add(make_shared<Sphere>(Point3( 1.0,    0.0, -1.0),   0.5, material_right)); 
+
+    return objects;
+}
+
 
 int threads;
 void renderScene(Camera& cam, Mat& image){
@@ -178,14 +203,14 @@ void renderScene(Camera& cam, Mat& image){
 void printExploreWelcomeMessage(){
     // show short intro message
     std::cout << BOLDRED << "Welcome to my BasicRayTracer-Explorer!" << RESET << std::endl;
-    std::cout << BOLDWHITE <<   "[W-A-S-D / arrow-keys to move and rotate]\n
-                                [1-2 to move up and down]\n
-                                [3-4 to tilt up and down]\n
-                                [Q-E to zoom]\n
-                                [O to save the current render as output.tiff]\n
-                                [SPACE to render scene in high quality (720p)]\n
-                                [ENTER to render scene in really high quality (1080p)]\n
-                                [ESC to quit]\n" << RESET << std::endl;
+    std::cout << BOLDWHITE <<   "[W-A-S-D / arrow-keys to move and rotate]\n" <<
+                                "[1-2 to move up and down]\n" <<
+                                "[3-4 to tilt up and down]\n" <<
+                                "[Q-E to zoom]\n" <<
+                                "[O to save the current render as output.tiff]\n" <<
+                                "[SPACE to render scene in high quality (720p)]\n" <<
+                                "[ENTER to render scene in really high quality (1080p)]\n" <<
+                                "[ESC to quit]\n" << RESET << std::endl;
 }
 
 void setLowQualityRender() {
@@ -204,7 +229,7 @@ void setHighQualityRender() {
 
 // warning! super high quality can take quite some time (multiple minutes, upto hours, depending on the scene) to compute :)
 void setSuperHighQualityRender() {
-    samples_per_pixel = 400;
+    samples_per_pixel = 1000;
     max_depth = 50;
     image_width = 1920;
     image_height = 1080;
@@ -266,21 +291,7 @@ int main(int argc, char* argv[]) {
         world = random_scene();
     } else {
         // set background color
-        // background = Color(1,1,1);
-        // // create scene objects
-        // auto perlinNoise = make_shared<Noise_Texture>(4);
-
-        // auto material_ground = make_shared<Lambertian>(Color(0.8, 0.8, 0.0));
-        // auto material_center = make_shared<Dielectric>(1.5);
-        auto material_left   = make_shared<Metal>(Color(0.2, 0.4, 0.8), 0.2);
-        // auto material_right  = make_shared<Lambertian>(perlinNoise);
-        // auto light = make_shared<Diffuse_Light>(Color(4,4,4));
-
-        // world.add(make_shared<Sphere>(Point3( 0.0, -100.5, -1.0), 100.0, material_ground));
-        // world.add(make_shared<Sphere>(Point3( 0.0,    0.0, -1.0),   0.5, material_center));
-        // world.add(make_shared<Sphere>(Point3(-1.0,    0.0, -1.0),   0.5, material_left));
-        // world.add(make_shared<Sphere>(Point3( 1.0,    0.0, -1.0),   0.5, material_right)); 
-        // world.add(make_shared<XY_Rect>(-2, 2, 0, 2, -2, light));
+        
 
         world = modified_cornell();
     }

@@ -9,7 +9,9 @@ struct Hit;
 class Material {
     public:
         virtual bool scatter(const Ray& r_in, const Hit& rec, Color& attenuation, Ray& scattered) const = 0;
-        virtual Color emitted(double u, double v, const Point3& p) const {return Color(0,0,0);}
+         virtual Color emitted(double u, double v, const Point3& p) const {
+            return Color(0,0,0);
+        }
 };
 
 class Lambertian : public Material {
@@ -95,7 +97,9 @@ class Diffuse_Light : public Material  {
         Diffuse_Light(shared_ptr<Texture> a) : emit(a) {}
         Diffuse_Light(Color c) : emit(make_shared<Solid_Color>(c)) {}
 
-        virtual bool scatter(const Ray& r_in, const Hit& hit, Color& attenuation, Ray& scattered) const override {
+        virtual bool scatter(
+            const Ray& r_in, const Hit& rec, Color& attenuation, Ray& scattered
+        ) const override {
             return false;
         }
 
