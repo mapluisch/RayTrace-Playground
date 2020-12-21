@@ -4,9 +4,13 @@
 
 PROJECT(RayTracer)
 
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.1)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.9)
 
 SET(CMAKE_VERBOSE_MAKEFILE ON)
+
+
+set(CMAKE_C_COMPILER "/usr/local/opt/llvm/bin/clang") 
+set(CMAKE_CXX_COMPILER "/usr/local/opt/llvm/bin/clang++")
 
 
 ################################################################################
@@ -66,11 +70,12 @@ SET(MY_SOURCE_FILES
 
 
 ################################################################################
-# Find Packages CXXOPTS and SFML2
+# Find Packages CXXOPTS, OpenCV
 ################################################################################
 
 find_package(cxxopts REQUIRED)
-find_package( OpenCV REQUIRED )
+find_package(OpenCV REQUIRED)
+
 
 ################################################################################
 # Compiler flags
@@ -79,20 +84,24 @@ find_package( OpenCV REQUIRED )
 INCLUDE_DIRECTORIES(
     ${MY_PROJECT_INCLUDE_DIR}
     ${OpenCV_INCLUDE_DIRS}
+    "/usr/local/include" "/usr/local/opt/llvm/include"
 )
 
 # CMake sets additional flags for debug and release builds by using the 
 # correct build types.
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O3")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O3 -march=native -fopenmp")
 
 
 ################################################################################
 # Compiler flags
 ################################################################################
 
+# ...MacOSX.sdk/usr/lib linked to fix -lSystem erorr on -fopenmp usage
 LINK_DIRECTORIES(
 
-    
+    "/usr/local/lib" 
+    "/usr/local/opt/llvm/lib"
+    "/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib"
 
 )
 

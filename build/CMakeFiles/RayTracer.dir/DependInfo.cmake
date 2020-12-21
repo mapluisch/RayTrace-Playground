@@ -11,6 +11,7 @@ set(CMAKE_CXX_COMPILER_ID "Clang")
 # The include file search paths:
 set(CMAKE_CXX_TARGET_INCLUDE_PATH
   "../include"
+  "/usr/local/opt/llvm/include"
   "/usr/local/Cellar/opencv/4.5.0_5/include/opencv4"
   "/usr/local/include"
   )

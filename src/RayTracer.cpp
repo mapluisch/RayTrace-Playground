@@ -2,6 +2,7 @@
 #include <fstream>      // used for writing image to file
 #include <cxxopts.hpp>  // used for nicer argument parsing
 #include <math.h>
+#include <omp.h>
 
 #include "Utilities.h"
 
@@ -91,19 +92,21 @@ Hittable_List random_scene() {
 Hittable_List modified_cornell() {
     Hittable_List objects;
 
-    auto red   = make_shared<Lambertian>(Color(.65, .05, .05));
-    auto white = make_shared<Lambertian>(Color(.73, .73, .73));
-    auto green = make_shared<Lambertian>(Color(.12, .45, .15));
-    auto light = make_shared<Diffuse_Light>(Color(4, 4, 4));
-    auto mirror = make_shared<Metal>(Color(1,1,1), 0.0);
-    auto metal   = make_shared<Metal>(Color(0.2, 0.4, 0.8), 0.2);
-    auto glass = make_shared<Dielectric>(1.5);
+    auto red    = make_shared<Lambertian>(Color(.65, .05, .05));
+    auto blue   = make_shared<Lambertian>(Color(.35, .35, 1));
+    auto white  = make_shared<Lambertian>(Color(.73, .73, .73));
+    auto green  = make_shared<Lambertian>(Color(.12, .45, .15));
+    auto yellow = make_shared<Lambertian>(Color(0.9, 0.8, 0.1));
+    auto light  = make_shared<Diffuse_Light>(Color(4,4,4));
+    auto mirror = make_shared<Metal>(Color(0.7,0.7,0.7), 0.0);
+    auto metal  = make_shared<Metal>(Color(0.2, 0.4, 0.8), 0.3);
+    auto glass  = make_shared<Dielectric>(1.5);
 
 
     // left
     objects.add(make_shared<YZ_Rect>(-5, 5, -10, 0, -5, green));
     // right
-    objects.add(make_shared<YZ_Rect>(-5, 5, -10, 0, 5, green));
+    objects.add(make_shared<YZ_Rect>(-5, 5, -10, 0, 5, yellow));
     // top
     objects.add(make_shared<XZ_Rect>(-5, 5, -10, 0, 5, red));
     // bottom
@@ -115,29 +118,42 @@ Hittable_List modified_cornell() {
 
     // light top
     objects.add(make_shared<XZ_Rect>(-2.5, 2.5, -7.5, -2.5, 5, light));
+    // light bar left
+    // objects.add(make_shared<YZ_Rect>(-1, 1, -10, 0, -5, light));
+    // light bar right
+    // objects.add(make_shared<YZ_Rect>(-1, 1, -10, 0, 5, light));
 
     // boxes
     objects.add(make_shared<Box>(Point3(-3, -5, -8), Point3(-1, 1, -6), metal));
 
     // mirror box
-    shared_ptr<Hittable> mirrorBox = make_shared<Box>(Point3(1, -5, -6), Point3(3, -2, -4), mirror);
-    mirrorBox = make_shared<RotateY>(mirrorBox, 35);
+    shared_ptr<Hittable> mirrorBox = make_shared<Box>(Point3(-2, -5, -6), Point3(2, 3, -4), mirror);
+    mirrorBox = make_shared<RotateY>(mirrorBox, 25);
+    mirrorBox = make_shared<Translate>(mirrorBox, Vec3(4,0,-4));
     objects.add(mirrorBox);
 
-    // glass box
-    objects.add(make_shared<Box>(Point3(-2, -5, -6), Point3(2, -3, -4), glass));
+    // glass sphere
+    objects.add(make_shared<Sphere>(Point3( 0.0, 0.0, -2.0), 0.5, glass));
+    objects.add(make_shared<Sphere>(Point3( -1, -1, -3.0), 0.2, glass));
+    objects.add(make_shared<Sphere>(Point3( 1, -1, -3.0), 0.2, glass));
+    objects.add(make_shared<Sphere>(Point3( -1, 1, -3.0), 0.2, glass));
+    objects.add(make_shared<Sphere>(Point3( 1, 1, -3.0), 0.2, glass));
     return objects;
 }
 
-
-
-
+int threads;
 void renderScene(Camera& cam, Mat& image){
+
+    threads = omp_get_max_threads();
+    omp_set_num_threads(threads);
+
     for (int j = image_height-1; j >= 0; --j) {
         float progress = (float) (image_height - j)/ (float) image_height;
         displayProgressbar(progress);
+        #pragma omp parallel for 
         for (int i = 0; i < image_width; ++i) {
             Color pixel_color(0, 0, 0);
+            #pragma omp parallel for 
             for (int s = 0; s < samples_per_pixel; ++s) {
                 auto u = (i + random_double()) / (image_width-1);
                 auto v = (j + random_double()) / (image_height-1);
@@ -151,7 +167,7 @@ void renderScene(Camera& cam, Mat& image){
             auto scale = 1.0 / samples_per_pixel;
             r = sqrt(scale * r);
             g = sqrt(scale * g);
-            b = sqrt(scale * b);    
+            b = sqrt(scale * b); 
 
             RGB& rgb = image.ptr<RGB>(image_height - j)[i];
             rgb.blue = b*255; rgb.green = g*255; rgb.red = r*255;
@@ -162,21 +178,36 @@ void renderScene(Camera& cam, Mat& image){
 void printExploreWelcomeMessage(){
     // show short intro message
     std::cout << BOLDRED << "Welcome to my BasicRayTracer-Explorer!" << RESET << std::endl;
-    std::cout << BOLDWHITE << "[W-A-S-D / arrow-keys to move and rotate]\n[1-2 to move up and down]\n[3-4 to tilt up and down]\n[Q-E to zoom]\n[SPACE to render scene in high quality]\n[ESC to quit]\n" << RESET << std::endl;
+    std::cout << BOLDWHITE <<   "[W-A-S-D / arrow-keys to move and rotate]\n
+                                [1-2 to move up and down]\n
+                                [3-4 to tilt up and down]\n
+                                [Q-E to zoom]\n
+                                [O to save the current render as output.tiff]\n
+                                [SPACE to render scene in high quality (720p)]\n
+                                [ENTER to render scene in really high quality (1080p)]\n
+                                [ESC to quit]\n" << RESET << std::endl;
 }
 
 void setLowQualityRender() {
-    samples_per_pixel = 2;
-    max_depth = 5;
+    samples_per_pixel = 3;
+    max_depth = 3;
     image_width = 400;
     image_height = 225;
 }
 
 void setHighQualityRender() {
-    samples_per_pixel = 100;
-    max_depth = 25;
+    samples_per_pixel = 20;
+    max_depth = 20;
     image_width = 1280;
     image_height = 720;
+}
+
+// warning! super high quality can take quite some time (multiple minutes, upto hours, depending on the scene) to compute :)
+void setSuperHighQualityRender() {
+    samples_per_pixel = 400;
+    max_depth = 50;
+    image_width = 1920;
+    image_height = 1080;
 }
 
 int main(int argc, char* argv[]) {
@@ -187,8 +218,8 @@ int main(int argc, char* argv[]) {
         ("h,help", "Print usage information")
         ("x,width", "Image width in pixel", cxxopts::value<int>())
         ("y,height", "Image height in pixel", cxxopts::value<int>())
-        ("s,samples_per_pixel", "Samples per Pixel", cxxopts::value<int>())
-        ("d,depth", "Maximum depth", cxxopts::value<int>())
+        ("s,samples_per_pixel", "Samples per pixel", cxxopts::value<int>())
+        ("d,depth", "Maximum recursion depth for each ray", cxxopts::value<int>())
         ("f,fov", "Camera's vertical field of view", cxxopts::value<double>())
         ("o,output", "Output file name", cxxopts::value<std::string>())
         ("r,random", "Boolean whether to create a random scene-world or not", cxxopts::value<bool>())
@@ -259,6 +290,8 @@ int main(int argc, char* argv[]) {
     // overwrite standard render-quality settings for faster first-frame rendering in explore mode
     if(explore) setLowQualityRender();
     // render initial scene-image
+    
+    #pragma parallel
     renderScene(cam, image);
 
     #pragma region World-Exploring through movement, displayed in OpenCV window
@@ -306,13 +339,27 @@ int main(int argc, char* argv[]) {
                 cam.rotateCamera(camDirection, image_width, image_height, vfov, camAperture, camFocusDistance);
             } else if (key == 1||key == 's'||key == 'S'){ // down arrow
                 cam.moveCamera(camDirection * -exploreStepSize, camDirection, image_width, image_height, vfov, camAperture, camFocusDistance);
-            } else if (key == 32){ // spacebar -> render image in 1080p
+            }
+            
+            if (key == 32){ // spacebar -> render image in 1080p
                 setHighQualityRender();
                 resize(image, image, cv::Size(image_width, image_height));
                 resizeWindow("RayTracer", image_width, image_height);
-            } else if (key == 27){ // escape, end loop
+            } else if (key == 13){
+                setSuperHighQualityRender();
+                resize(image, image, cv::Size(image_width, image_height));
+                resizeWindow("RayTracer", image_width, image_height);
+            } 
+
+            if (key == 'o'){
+                imwrite("output.tiff",image);
+            }
+            
+            
+            if (key == 27){ // escape, end loop
                 explore = false;
             }
+
             renderScene(cam, image);
         }   
     } else {

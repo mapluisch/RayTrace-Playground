@@ -278,3 +278,4 @@ CMakeFiles/RayTracer.dir/src/RayTracer.cpp.o
  /usr/local/include/boost/type_traits/remove_reference.hpp
  /usr/local/include/boost/version.hpp
  /usr/local/include/cxxopts.hpp
+ /usr/local/include/omp.h
