@@ -50,12 +50,18 @@ inline double clamp(double x, double min, double max) {
 #define BOLDRED         "\033[1m\033[31m"
 #define BOLDWHITE       "\033[1m\033[37m"  
 #define RESET           "\033[0m"
+
 void displayProgressbar(float progress) {
     int val = (int) (progress * 100);
     int lpad = (int) (progress * PBWIDTH);
     int rpad = PBWIDTH - lpad;
     printf("\r[%sRendering... %3d%%%s] [%s%.*s%*s%s]", BOLDYELLOW, val, RESET, BLUE, lpad, PBSTR, rpad, "", RESET);
     fflush(stdout);
+}
+
+inline int random_int(int min, int max) {
+    // Returns a random integer in [min,max].
+    return static_cast<int>(random_double(min, max+1));
 }
 
 // Common Headers

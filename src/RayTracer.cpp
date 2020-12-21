@@ -1,49 +1,54 @@
 #include <iostream>
 #include <fstream>      // used for writing image to file
 #include <cxxopts.hpp>  // used for nicer argument parsing
+#include <math.h>
 
 #include "Utilities.h"
+
 #include "Color.h"
 #include "Hittable_List.h"
 #include "Sphere.h"
 #include "Camera.h"
 #include "Material.h"
-#include <math.h>
+#include "AARect.h"
+#include "Box.h"
 
 #include <opencv2/opencv.hpp>
 using namespace cv;
 
 int image_width;
- int image_height;
- int samples_per_pixel;
- int max_depth;
- double vfov;
- bool randomize_world;
- Hittable_List world;
+int image_height;
+int samples_per_pixel;
+int max_depth;
+double vfov;
+bool randomize_world;
+Hittable_List world;
+Color background(0,0,0);
+int currentSceneIndex = 0;
 
- struct RGB {
-    uchar blue;
-    uchar green;
-    uchar red;  };
 
-Color ray_color(const Ray& r, const Hittable& world, int depth) {
+struct RGB {uchar blue; uchar green; uchar red;};
+
+Color ray_color(const Ray& r, const Color& background, const Hittable& world, int depth) {
     Hit hit;
 
     // If we've exceeded the ray bounce limit, no more light is gathered.
     if (depth <= 0){
         return Color(0,0,0);
     }
-    
-    if (world.hit(r, 0.001, infinity, hit)) { //set t_min to 0.001 to avoid "shadow acne"
-        Ray scattered;
-        Color attenuation;
-        if (hit.mat_ptr->scatter(r, hit, attenuation, scattered))
-            return attenuation * ray_color(scattered, world, depth-1);
-        return Color(0,0,0);
-    }
-    Vec3 unit_direction = unit_vector(r.direction());
-    auto t = 0.5*(unit_direction.y() + 1.0);
-    return (1.0-t)*Color(1.0, 1.0, 1.0) + t*Color(0.5, 0.7, 1.0);
+
+    // If the ray hits nothing, return the background color.
+    if (!world.hit(r, 0.001, infinity, hit))
+        return background;
+
+    Ray scattered;
+    Color attenuation;
+    Color emitted = hit.mat_ptr->emitted(hit.u, hit.v, hit.p);
+
+    if (!hit.mat_ptr->scatter(r, hit, attenuation, scattered))
+        return emitted;
+
+    return emitted + attenuation * ray_color(scattered, background, world, depth-1);
 }
 
 Hittable_List random_scene() {
@@ -83,6 +88,47 @@ Hittable_List random_scene() {
     return world;
 }
 
+Hittable_List modified_cornell() {
+    Hittable_List objects;
+
+    auto red   = make_shared<Lambertian>(Color(.65, .05, .05));
+    auto white = make_shared<Lambertian>(Color(.73, .73, .73));
+    auto green = make_shared<Lambertian>(Color(.12, .45, .15));
+    auto light = make_shared<Diffuse_Light>(Color(4, 4, 4));
+    auto mirror = make_shared<Metal>(Color(1,1,1), 0.0);
+    auto metal   = make_shared<Metal>(Color(0.2, 0.4, 0.8), 0.2);
+    auto glass = make_shared<Dielectric>(1.5);
+
+
+    // left
+    objects.add(make_shared<YZ_Rect>(-5, 5, -10, 0, -5, green));
+    // right
+    objects.add(make_shared<YZ_Rect>(-5, 5, -10, 0, 5, green));
+    // top
+    objects.add(make_shared<XZ_Rect>(-5, 5, -10, 0, 5, red));
+    // bottom
+    objects.add(make_shared<XZ_Rect>(-5, 5, -10, 0, -5, red));
+    // back
+    objects.add(make_shared<XY_Rect>(-5, 5, -5, 5, -10, white));
+    // front
+    objects.add(make_shared<XY_Rect>(-5, 5, -5, 5, 0.1, white));
+
+    // light top
+    objects.add(make_shared<XZ_Rect>(-2.5, 2.5, -7.5, -2.5, 5, light));
+
+    // boxes
+    objects.add(make_shared<Box>(Point3(-3, -5, -8), Point3(-1, 1, -6), metal));
+
+    // mirror box
+    shared_ptr<Hittable> mirrorBox = make_shared<Box>(Point3(1, -5, -6), Point3(3, -2, -4), mirror);
+    mirrorBox = make_shared<RotateY>(mirrorBox, 35);
+    objects.add(mirrorBox);
+
+    // glass box
+    objects.add(make_shared<Box>(Point3(-2, -5, -6), Point3(2, -3, -4), glass));
+    return objects;
+}
+
 
 
 
@@ -96,7 +142,7 @@ void renderScene(Camera& cam, Mat& image){
                 auto u = (i + random_double()) / (image_width-1);
                 auto v = (j + random_double()) / (image_height-1);
                 Ray r = cam.get_ray(u, v);
-                pixel_color += ray_color(r, world, max_depth);
+                pixel_color += ray_color(r, background, world, max_depth);
             }
             auto r = pixel_color.x();
             auto g = pixel_color.y();
@@ -128,7 +174,7 @@ void setLowQualityRender() {
 
 void setHighQualityRender() {
     samples_per_pixel = 100;
-    max_depth = 20;
+    max_depth = 25;
     image_width = 1280;
     image_height = 720;
 }
@@ -188,16 +234,24 @@ int main(int argc, char* argv[]) {
     if(randomize_world){
         world = random_scene();
     } else {
-        // use predefined scene
-        auto material_ground = make_shared<Lambertian>(Color(0.8, 0.8, 0.0));
-        auto material_center = make_shared<Dielectric>(1.5);
-        auto material_left   = make_shared<Metal>(Color(0.2, 0.4, 0.8), 0.3);
-        auto material_right  = make_shared<Metal>(Color(0.8, 0.6, 0.2), 1.0);
+        // set background color
+        // background = Color(1,1,1);
+        // // create scene objects
+        // auto perlinNoise = make_shared<Noise_Texture>(4);
 
-        world.add(make_shared<Sphere>(Point3( 0.0, -100.5, -1.0), 100.0, material_ground));
-        world.add(make_shared<Sphere>(Point3( 0.0,    0.0, -1.0),   0.5, material_center));
-        world.add(make_shared<Sphere>(Point3(-1.0,    0.0, -1.0),   0.5, material_left));
-        world.add(make_shared<Sphere>(Point3( 1.0,    0.0, -1.0),   0.5, material_right)); 
+        // auto material_ground = make_shared<Lambertian>(Color(0.8, 0.8, 0.0));
+        // auto material_center = make_shared<Dielectric>(1.5);
+        auto material_left   = make_shared<Metal>(Color(0.2, 0.4, 0.8), 0.2);
+        // auto material_right  = make_shared<Lambertian>(perlinNoise);
+        // auto light = make_shared<Diffuse_Light>(Color(4,4,4));
+
+        // world.add(make_shared<Sphere>(Point3( 0.0, -100.5, -1.0), 100.0, material_ground));
+        // world.add(make_shared<Sphere>(Point3( 0.0,    0.0, -1.0),   0.5, material_center));
+        // world.add(make_shared<Sphere>(Point3(-1.0,    0.0, -1.0),   0.5, material_left));
+        // world.add(make_shared<Sphere>(Point3( 1.0,    0.0, -1.0),   0.5, material_right)); 
+        // world.add(make_shared<XY_Rect>(-2, 2, 0, 2, -2, light));
+
+        world = modified_cornell();
     }
 
     // create image cv2-mat

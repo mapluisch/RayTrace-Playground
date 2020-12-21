@@ -2,19 +2,20 @@
 #define _MATERIAL_H
 
 #include "Utilities.h"
+#include "Texture.h"
 
 struct Hit;
 
 class Material {
     public:
-        virtual bool scatter(
-            const Ray& r_in, const Hit& rec, Color& attenuation, Ray& scattered
-        ) const = 0;
+        virtual bool scatter(const Ray& r_in, const Hit& rec, Color& attenuation, Ray& scattered) const = 0;
+        virtual Color emitted(double u, double v, const Point3& p) const {return Color(0,0,0);}
 };
 
 class Lambertian : public Material {
     public:
-        Lambertian(const Color& a) : albedo(a) {}
+        Lambertian(const Color& a) : albedo(make_shared<Solid_Color>(a)) {}
+        Lambertian(shared_ptr<Texture> a) : albedo(a) {}
 
         virtual bool scatter(
             const Ray& r_in, const Hit& rec, Color& attenuation, Ray& scattered
@@ -26,12 +27,12 @@ class Lambertian : public Material {
                 scatter_direction = rec.normal;
 
             scattered = Ray(rec.p, scatter_direction);
-            attenuation = albedo;
+            attenuation = albedo->value(rec.u, rec.v, rec.p);
             return true;
         }
 
     public:
-        Color albedo;
+        shared_ptr<Texture> albedo;
 };
 
 class Metal : public Material {
@@ -57,9 +58,7 @@ class Dielectric : public Material {
     public:
         Dielectric(double index_of_refraction) : ir(index_of_refraction) {}
 
-        virtual bool scatter(
-            const Ray& r_in, const Hit& rec, Color& attenuation, Ray& scattered
-        ) const override {
+        virtual bool scatter(const Ray& r_in, const Hit& rec, Color& attenuation, Ray& scattered) const override {
             attenuation = Color(1.0, 1.0, 1.0);
             double refraction_ratio = rec.front_face ? (1.0/ir) : ir;
 
@@ -90,4 +89,22 @@ class Dielectric : public Material {
             return r0 + (1-r0)*pow((1 - cosine),5);
         }
 };
+
+class Diffuse_Light : public Material  {
+    public:
+        Diffuse_Light(shared_ptr<Texture> a) : emit(a) {}
+        Diffuse_Light(Color c) : emit(make_shared<Solid_Color>(c)) {}
+
+        virtual bool scatter(const Ray& r_in, const Hit& hit, Color& attenuation, Ray& scattered) const override {
+            return false;
+        }
+
+        virtual Color emitted(double u, double v, const Point3& p) const override {
+            return emit->value(u, v, p);
+        }
+
+    public:
+        shared_ptr<Texture> emit;
+};
+
 #endif

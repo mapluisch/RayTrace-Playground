@@ -6,6 +6,24 @@
 
 #IncludeRegexTransform: 
 
+../include/AABB.h
+Utilities.h
+../include/Utilities.h
+
+../include/AARect.h
+Utilities.h
+../include/Utilities.h
+Hittable.h
+../include/Hittable.h
+
+../include/Box.h
+Utilities.h
+../include/Utilities.h
+AARect.h
+../include/AARect.h
+Hittable_List.h
+../include/Hittable_List.h
+
 ../include/Camera.h
 Utilities.h
 ../include/Utilities.h
@@ -23,16 +41,26 @@ Ray.h
 ../include/Ray.h
 Utilities.h
 ../include/Utilities.h
+AABB.h
+../include/AABB.h
 
 ../include/Hittable_List.h
 Hittable.h
 ../include/Hittable.h
+AABB.h
+../include/AABB.h
 memory
 -
 vector
 -
 
 ../include/Material.h
+Utilities.h
+../include/Utilities.h
+Texture.h
+../include/Texture.h
+
+../include/Perlin.h
 Utilities.h
 ../include/Utilities.h
 
@@ -45,6 +73,14 @@ Hittable.h
 ../include/Hittable.h
 Vec3.h
 ../include/Vec3.h
+AABB.h
+../include/AABB.h
+
+../include/Texture.h
+Utilities.h
+../include/Utilities.h
+Perlin.h
+../include/Perlin.h
 
 ../include/Utilities.h
 cmath
@@ -73,6 +109,8 @@ fstream
 -
 cxxopts.hpp
 -
+math.h
+-
 Utilities.h
 /Users/martinpluisch/Development/BasicRayTracing/src/Utilities.h
 Color.h
@@ -85,8 +123,10 @@ Camera.h
 /Users/martinpluisch/Development/BasicRayTracing/src/Camera.h
 Material.h
 /Users/martinpluisch/Development/BasicRayTracing/src/Material.h
-math.h
--
+AARect.h
+/Users/martinpluisch/Development/BasicRayTracing/src/AARect.h
+Box.h
+/Users/martinpluisch/Development/BasicRayTracing/src/Box.h
 opencv2/opencv.hpp
 -
 
