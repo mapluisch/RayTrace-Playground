@@ -27,6 +27,7 @@ Hittable_List world;
 Color background(0,0,0);
 int currentSceneIndex = 0;
 int spawnObjectDistance = 2;
+Camera cam;
 
 
 struct RGB {uchar blue; uchar green; uchar red;};
@@ -145,7 +146,7 @@ Hittable_List modified_cornell() {
 }
 
 Hittable_List test_scene() {
-    background = Color(0.6,0.7,1);
+    // background = Color(0.6,0.7,1);
     Hittable_List objects;
 
     auto material_ground = make_shared<Lambertian>(Color(0.8, 0.8, 0.0));
@@ -231,9 +232,9 @@ void setSuperHighQualityRender() {
 
 void spawnRandomSphere(Point3 spawnPoint) {
     auto random_material = random_double();
-    int max_size = 2;
+    float max_size = 0.8;
     auto random_size = random_double() * max_size;
-    Point3 center = spawnPoint + Vec3(0,0,0);
+    Point3 center = spawnPoint + (cam.getRelativeViewDirection() * spawnObjectDistance);
 
     std::cout<<spawnPoint<<std::endl;
 
@@ -241,18 +242,29 @@ void spawnRandomSphere(Point3 spawnPoint) {
 
     if (random_material < 0.33) {
         // diffuse
-        auto albedo = Color::random() * Color::random();
+        auto albedo = Color::random();
         sphere_material = make_shared<Lambertian>(albedo);
     } else if (random_material < 0.66) {
         // metal
-        auto albedo = Color::random(0.5, 1);
+        auto albedo = Color::random();
         auto fuzz = random_double(0, 0.5);
         sphere_material = make_shared<Metal>(albedo, fuzz);
     } else {
         // glass
-        sphere_material = make_shared<Dielectric>(1.5);
+        float minRefraction = 1.2;
+        sphere_material = make_shared<Dielectric>(random_double() + minRefraction);
     }   
     world.add(make_shared<Sphere>(center, random_size, sphere_material));
+}
+
+void InitializeCamera(Camera &cam) {
+    Point3 currentCamPosition (0,0,0);
+    Point3 camDirection = currentCamPosition + Vec3(0,0,-1);
+    Vec3 camUp (0,1,0);
+    double camAperture = 0.0;
+    double camFocusDistance = (currentCamPosition-camDirection).length();
+    Camera c(currentCamPosition, camDirection, camUp, image_width, image_height, vfov, camAperture, camFocusDistance);
+    cam = c;
 }
 
 int main(int argc, char* argv[]) {
@@ -297,14 +309,9 @@ int main(int argc, char* argv[]) {
     float rotationAngle = 10;
     float exploreStepSize = 0.1; // units to move per arrow-keypress
     float vfovStep = 1;
-    // Generate Camera
-    Point3 currentCamPosition (0,0,0);
-    Point3 camDirection = currentCamPosition + Vec3(0,0,-1);
-    Vec3 camUp (0,1,0);
-    double camAperture = 0.0;
-    double camFocusDistance = (currentCamPosition-camDirection).length();
-    Camera cam(currentCamPosition, camDirection, camUp, image_width, image_height, vfov, camAperture, camFocusDistance);
 
+    // Generate Camera
+    InitializeCamera(cam);
 
     // Generate World    
     if(randomize_world){
@@ -334,39 +341,35 @@ int main(int argc, char* argv[]) {
             char key = cv::waitKey(0);
 
             if(key == 'e'){
-                vfov -= vfovStep;
-                cam.updateFOV(image_width, image_height, vfov, camAperture, camFocusDistance);
+                cam.updateFOV(-vfovStep);
             } else if (key == 'q'){
-                vfov += vfovStep;
-                cam.updateFOV(image_width, image_height, vfov, camAperture, camFocusDistance);
+                cam.updateFOV(vfovStep);
             }
 
             if(key == '1'){
-                cam.moveCamera(Vec3(0,-exploreStepSize,0), image_width, image_height, vfov, camAperture, camFocusDistance);
+                cam.moveCamera(Vec3(0,-exploreStepSize,0));
             } else if(key == '2'){
-                cam.moveCamera(Vec3(0,exploreStepSize,0), image_width, image_height, vfov, camAperture, camFocusDistance);
+                cam.moveCamera(Vec3(0,exploreStepSize,0));
             }
 
             if (key == '3'){
-                cam.tiltCamera(Vec3(0, -exploreStepSize, 0), image_width, image_height, vfov, camAperture, camFocusDistance);
+                cam.tiltCamera(Vec3(0, -exploreStepSize, 0));
             } else if (key == '4'){
-                cam.tiltCamera(Vec3(0, exploreStepSize, 0) ,image_width, image_height, vfov, camAperture, camFocusDistance);
+                cam.tiltCamera(Vec3(0, exploreStepSize, 0));
             }
 
             if (key == 'b') {
-                spawnRandomSphere(cam.getCurrentPosition() + cam.getCurrentDirection());
+                spawnRandomSphere(cam.getCurrentDirection());
             }
 
-
-
             if (key == 2||key == 'a'||key == 'A'){ // left movement
-                cam.rotateCamera(-rotationAngle, image_width, image_height, vfov, camAperture, camFocusDistance);
+                cam.rotateCamera(-rotationAngle);
             } else if (key == 0||key == 'w'||key == 'W'){ // up movement
-                cam.moveCamera(cam.getRelativeViewDirection() * exploreStepSize, image_width, image_height, vfov, camAperture, camFocusDistance);
+                cam.moveCamera(cam.getRelativeViewDirection() * exploreStepSize);
             } else if (key == 3||key == 'd'||key == 'D'){ // right movement
-                cam.rotateCamera(rotationAngle, image_width, image_height, vfov, camAperture, camFocusDistance);
+                cam.rotateCamera(rotationAngle);
             } else if (key == 1||key == 's'||key == 'S'){ // down movement
-                cam.moveCamera(cam.getRelativeViewDirection() * -exploreStepSize, image_width, image_height, vfov, camAperture, camFocusDistance);
+                cam.moveCamera(cam.getRelativeViewDirection() * -exploreStepSize);
             }
             
             if (key == 32){ // spacebar -> render image in 1080p
@@ -382,8 +385,7 @@ int main(int argc, char* argv[]) {
             if (key == 'o'){
                 imwrite("output.tiff",image);
             }
-            
-            
+                        
             if (key == 27){ // escape, end loop
                 explore = false;
             }
