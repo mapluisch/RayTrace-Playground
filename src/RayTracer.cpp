@@ -26,6 +26,7 @@ bool randomize_world;
 Hittable_List world;
 Color background(0,0,0);
 int currentSceneIndex = 0;
+int spawnObjectDistance = 2;
 
 
 struct RGB {uchar blue; uchar green; uchar red;};
@@ -144,23 +145,16 @@ Hittable_List modified_cornell() {
 }
 
 Hittable_List test_scene() {
-    // background = Color(0.6,0.7,1);
-
+    background = Color(0.6,0.7,1);
     Hittable_List objects;
 
-    auto perlinNoise = make_shared<Noise_Texture>(4);
-
     auto material_ground = make_shared<Lambertian>(Color(0.8, 0.8, 0.0));
-    auto material_center = make_shared<Dielectric>(1.5);
-    auto material_left   = make_shared<Metal>(Color(0.2, 0.4, 0.8), 0.2);
-    auto material_right  = make_shared<Lambertian>(perlinNoise);
+    auto sphere_mat = make_shared<Dielectric>(1.5);
     auto light = make_shared<Diffuse_Light>(Color(1,1,1));
 
     objects.add(make_shared<XY_Rect>(-2, 2, 0, 2, -2, light));
-    // objects.add(make_shared<Sphere>(Point3( 0.0, -100.5, -1.0), 100.0, material_ground));
-    // objects.add(make_shared<Sphere>(Point3( 0.0,    0.0, -1.0),   0.5, material_center));
-    objects.add(make_shared<Sphere>(Point3(-1.0,    0.0, -1.0),   0.5, material_left));
-    // objects.add(make_shared<Sphere>(Point3( 1.0,    0.0, -1.0),   0.5, material_right)); 
+    objects.add(make_shared<Sphere>(Point3( 0.0, -100.5, -1.0), 100.0, material_ground));
+    objects.add(make_shared<Sphere>(Point3(-1.0,    0.0, -1.0),   0.5, sphere_mat));
 
     return objects;
 }
@@ -235,6 +229,32 @@ void setSuperHighQualityRender() {
     image_height = 1080;
 }
 
+void spawnRandomSphere(Point3 spawnPoint) {
+    auto random_material = random_double();
+    int max_size = 2;
+    auto random_size = random_double() * max_size;
+    Point3 center = spawnPoint + Vec3(0,0,0);
+
+    std::cout<<spawnPoint<<std::endl;
+
+    shared_ptr<Material> sphere_material;
+
+    if (random_material < 0.33) {
+        // diffuse
+        auto albedo = Color::random() * Color::random();
+        sphere_material = make_shared<Lambertian>(albedo);
+    } else if (random_material < 0.66) {
+        // metal
+        auto albedo = Color::random(0.5, 1);
+        auto fuzz = random_double(0, 0.5);
+        sphere_material = make_shared<Metal>(albedo, fuzz);
+    } else {
+        // glass
+        sphere_material = make_shared<Dielectric>(1.5);
+    }   
+    world.add(make_shared<Sphere>(center, random_size, sphere_material));
+}
+
 int main(int argc, char* argv[]) {
     // CXXOPTS Init and Parsing
     // Create CXXOPTS-Argument parser for nice argument input
@@ -290,10 +310,7 @@ int main(int argc, char* argv[]) {
     if(randomize_world){
         world = random_scene();
     } else {
-        // set background color
-        
-
-        world = modified_cornell();
+        world = test_scene();
     }
 
     // create image cv2-mat
@@ -325,31 +342,31 @@ int main(int argc, char* argv[]) {
             }
 
             if(key == '1'){
-                cam.moveCamera(currentCamPosition - Vec3(0,exploreStepSize,0), camDirection, image_width, image_height, vfov, camAperture, camFocusDistance);
+                cam.moveCamera(Vec3(0,-exploreStepSize,0), image_width, image_height, vfov, camAperture, camFocusDistance);
             } else if(key == '2'){
-                cam.moveCamera(currentCamPosition + Vec3(0,exploreStepSize,0), camDirection, image_width, image_height, vfov, camAperture, camFocusDistance);
+                cam.moveCamera(Vec3(0,exploreStepSize,0), image_width, image_height, vfov, camAperture, camFocusDistance);
             }
 
             if (key == '3'){
-                camDirection = camDirection - Vec3(0,exploreStepSize,0);
-                cam.rotateCamera(camDirection, image_width, image_height, vfov, camAperture, camFocusDistance);
+                cam.tiltCamera(Vec3(0, -exploreStepSize, 0), image_width, image_height, vfov, camAperture, camFocusDistance);
             } else if (key == '4'){
-                camDirection = camDirection + Vec3(0,exploreStepSize,0);
-                cam.rotateCamera(camDirection, image_width, image_height, vfov, camAperture, camFocusDistance);
+                cam.tiltCamera(Vec3(0, exploreStepSize, 0) ,image_width, image_height, vfov, camAperture, camFocusDistance);
+            }
+
+            if (key == 'b') {
+                spawnRandomSphere(cam.getCurrentPosition() + cam.getCurrentDirection());
             }
 
 
 
-            if (key == 2||key == 'a'||key == 'A'){ // left arrow
-                camDirection.rotateAroundPoint(currentCamPosition, -rotationAngle);
-                cam.rotateCamera(camDirection, image_width, image_height, vfov, camAperture, camFocusDistance);
-            } else if (key == 0||key == 'w'||key == 'W'){ // up arrow or uppper/lower-case w
-                cam.moveCamera(camDirection * exploreStepSize, camDirection, image_width, image_height, vfov, camAperture, camFocusDistance);
-            } else if (key == 3||key == 'd'||key == 'D'){ // right arrow
-                camDirection.rotateAroundPoint(currentCamPosition, rotationAngle);
-                cam.rotateCamera(camDirection, image_width, image_height, vfov, camAperture, camFocusDistance);
-            } else if (key == 1||key == 's'||key == 'S'){ // down arrow
-                cam.moveCamera(camDirection * -exploreStepSize, camDirection, image_width, image_height, vfov, camAperture, camFocusDistance);
+            if (key == 2||key == 'a'||key == 'A'){ // left movement
+                cam.rotateCamera(-rotationAngle, image_width, image_height, vfov, camAperture, camFocusDistance);
+            } else if (key == 0||key == 'w'||key == 'W'){ // up movement
+                cam.moveCamera(cam.getRelativeViewDirection() * exploreStepSize, image_width, image_height, vfov, camAperture, camFocusDistance);
+            } else if (key == 3||key == 'd'||key == 'D'){ // right movement
+                cam.rotateCamera(rotationAngle, image_width, image_height, vfov, camAperture, camFocusDistance);
+            } else if (key == 1||key == 's'||key == 'S'){ // down movement
+                cam.moveCamera(cam.getRelativeViewDirection() * -exploreStepSize, image_width, image_height, vfov, camAperture, camFocusDistance);
             }
             
             if (key == 32){ // spacebar -> render image in 1080p

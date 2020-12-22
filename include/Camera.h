@@ -23,11 +23,14 @@ class Camera {
             vertical = focus_dist * viewport_height * v;
             lower_left_corner = origin - horizontal/2 - vertical/2 - focus_dist*w;
             lens_radius = aperture / 2;
+
+            relativeViewDirection = Vec3(0,0,-1);
         }
 
-        void moveCamera(Point3 positionOffset, Point3 camDirection, int image_width, int image_height, double vfov, double aperture, double focus_dist){
+        void moveCamera(Vec3 positionOffset, int image_width, int image_height, double vfov, double aperture, double focus_dist){
+            // Vec3 offset = relativeViewDirection * positionOffset;
             origin += positionOffset;
-            lookAt = camDirection + origin;
+            lookAt = relativeViewDirection + origin;
 
             auto theta = degrees_to_radians(vfov);
             auto h = tan(theta/2);
@@ -45,8 +48,33 @@ class Camera {
             lens_radius = aperture / 2;
         }
 
-        void rotateCamera (Point3 camDirection, int image_width, int image_height, double vfov, double aperture, double focus_dist){
-            lookAt = camDirection + origin; // set camera look-at direction to the specified camdirection (which is basically an offset) plus the origin, which is its current pos
+
+        void rotateCamera (int rotationAngle, int image_width, int image_height, double vfov, double aperture, double focus_dist){
+            relativeViewDirection.rotateAroundPoint(Vec3(0,0,0), rotationAngle);
+            
+            lookAt = relativeViewDirection + origin; // set camera look-at direction to the specified camdirection (which is basically an offset) plus the origin, which is its current pos
+
+            auto theta = degrees_to_radians(vfov);
+            auto h = tan(theta/2);
+            auto aspect_ratio = (double) image_width / (double)image_height;
+            auto viewport_height = 2.0 * h;
+            auto viewport_width = aspect_ratio * viewport_height;
+
+            w = unit_vector(origin - lookAt);
+            u = unit_vector(cross(camUp, w));
+            v = cross(w, u);
+            
+            horizontal = focus_dist * viewport_width * u;
+            vertical = focus_dist * viewport_height * v;
+            lower_left_corner = origin - horizontal/2 - vertical/2 - focus_dist*w;
+            lens_radius = aperture / 2;
+        }
+
+        void tiltCamera (Vec3 tiltVec, int image_width, int image_height, double vfov, double aperture, double focus_dist){
+            relativeViewDirection += tiltVec;
+            lookAt = relativeViewDirection + origin;
+            // lookAt += tiltVec;
+            // lookAt += origin; // set camera look-at direction to the specified camdirection (which is basically an offset) plus the origin, which is its current pos
 
             auto theta = degrees_to_radians(vfov);
             auto h = tan(theta/2);
@@ -90,6 +118,18 @@ class Camera {
             );
         }
 
+        Point3 getCurrentPosition(){
+            return origin;
+        }
+
+        Point3 getCurrentDirection(){
+            return lookAt;
+        }
+
+        Vec3 getRelativeViewDirection() {
+            return relativeViewDirection;
+        }
+
     private:
         Point3 origin;
         Point3 lookAt;
@@ -101,6 +141,6 @@ class Camera {
         Vec3 v; 
         Vec3 w;
         double lens_radius;
-        
+        Vec3 relativeViewDirection;
 };
 #endif

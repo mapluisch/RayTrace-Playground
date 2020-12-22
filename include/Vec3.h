@@ -10,6 +10,7 @@ class Vec3 {
     public:
         Vec3() : e{0,0,0} {}
         Vec3(double e0, double e1, double e2) : e{e0, e1, e2} {}
+        Vec3(double e0) : e{e0, e0, e0} {}
 
         double x() const { return e[0]; }
         double y() const { return e[1]; }
@@ -74,6 +75,15 @@ class Vec3 {
             double zpos = z1 + sin(radians) * (x() - x1) + cos(radians) * (z() - z1);
             setX(xpos);
             setZ(zpos);
+        }
+
+
+        Vec3 one(){
+            return Vec3(1,1,1);
+        }
+
+        Vec3 zero(){
+            return Vec3(0,0,0);
         }
 
     public:
@@ -168,6 +178,7 @@ Vec3 refract(const Vec3& uv, const Vec3& n, double etai_over_etat) {
     Vec3 r_out_parallel = -sqrt(fabs(1.0 - r_out_perp.length_squared())) * n;
     return r_out_perp + r_out_parallel;
 }
+
 
 
 #endif
