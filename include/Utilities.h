@@ -5,6 +5,8 @@
 #include <limits>
 #include <memory>
 #include <cstdlib>
+#include <random>
+#include <string>
 
 
 
@@ -62,6 +64,19 @@ void displayProgressbar(float progress) {
 inline int random_int(int min, int max) {
     // Returns a random integer in [min,max].
     return static_cast<int>(random_double(min, max+1));
+}
+
+//source https://stackoverflow.com/questions/47977829/generate-a-random-string-in-c11, 
+// a bit modified by me (specific passed-in length)
+std::string random_string(int length) {
+     std::string str("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz");
+
+     std::random_device rd;
+     std::mt19937 generator(rd());
+
+     std::shuffle(str.begin(), str.end(), generator);
+
+     return str.substr(0, length);    // assumes 32 < number of characters in str         
 }
 
 // Common Headers

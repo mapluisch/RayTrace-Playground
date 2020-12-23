@@ -36,6 +36,16 @@ Utilities.h
 iostream
 -
 
+../include/Constant_Medium.h
+Utilities.h
+../include/Utilities.h
+Hittable.h
+../include/Hittable.h
+Material.h
+../include/Material.h
+Texture.h
+../include/Texture.h
+
 ../include/Hittable.h
 Ray.h
 ../include/Ray.h
@@ -91,6 +101,10 @@ memory
 -
 cstdlib
 -
+random
+-
+string
+-
 Ray.h
 ../include/Ray.h
 Vec3.h
@@ -129,6 +143,8 @@ AARect.h
 /Users/martinpluisch/Development/BasicRayTracing/src/AARect.h
 Box.h
 /Users/martinpluisch/Development/BasicRayTracing/src/Box.h
+Constant_Medium.h
+/Users/martinpluisch/Development/BasicRayTracing/src/Constant_Medium.h
 opencv2/opencv.hpp
 -
 

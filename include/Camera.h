@@ -95,7 +95,8 @@ class Camera {
         }
 
         void updateFOV(double fovChange) {
-            auto theta = degrees_to_radians(fov + fovChange);
+            fov += fovChange;
+            auto theta = degrees_to_radians(fov);
             auto h = tan(theta/2);
             auto viewport_height = 2.0 * h;
             auto viewport_width = aspectRatio * viewport_height;
@@ -113,10 +114,7 @@ class Camera {
             Vec3 rd = lens_radius * random_in_unit_disk();
             Vec3 offset = u * rd.x() + v * rd.y();
 
-            return Ray(
-                origin + offset,
-                lower_left_corner + s*horizontal + t*vertical - origin - offset
-            );
+            return Ray(origin + offset, lower_left_corner + s*horizontal + t*vertical - origin - offset);
         }
 
         Point3 getCurrentPosition(){

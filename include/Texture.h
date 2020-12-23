@@ -4,6 +4,7 @@
 #include "Utilities.h"
 #include "Perlin.h"
 
+
 class Texture {
     public:
         virtual Color value(double u, double v, const Point3& p) const = 0;
@@ -62,5 +63,6 @@ class Noise_Texture : public Texture {
         Perlin noise;
         double scale;
 };
+
 
 #endif

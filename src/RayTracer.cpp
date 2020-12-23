@@ -13,6 +13,7 @@
 #include "Material.h"
 #include "AARect.h"
 #include "Box.h"
+#include "Constant_Medium.h"
 
 #include <opencv2/opencv.hpp>
 using namespace cv;
@@ -25,10 +26,11 @@ double vfov;
 bool randomize_world;
 Hittable_List world;
 Color background(0,0,0);
-int currentSceneIndex = 0;
-int spawnObjectDistance = 2;
+int spawnObjectDistance = 1;
 Camera cam;
 
+int currentSceneIndex = 0;
+int numOfDifferentScenes = 2;
 
 struct RGB {uchar blue; uchar green; uchar red;};
 
@@ -54,45 +56,9 @@ Color ray_color(const Ray& r, const Color& background, const Hittable& world, in
     return emitted + attenuation * ray_color(scattered, background, world, depth-1);
 }
 
-Hittable_List random_scene() {
-    Hittable_List world;
-
-    auto ground_material = make_shared<Lambertian>(Color(0.8, 0.8, 0.0));
-    world.add(make_shared<Sphere>(Point3(0,-1000.5,0), 1000, ground_material));
-
-    for (int a = -5; a < 5; a++) {
-        for (int b = -5; b < 5; b++) {
-            auto choose_mat = random_double();
-            Point3 center(a + 0.9*random_double(), 1, b + 0.9*random_double());
-
-            if ((center - Point3(4, 0, 0)).length() > 0.9) {
-                shared_ptr<Material> sphere_material;
-
-                if (choose_mat < 0.6) {
-                    // diffuse
-                    auto albedo = Color::random() * Color::random();
-                    sphere_material = make_shared<Lambertian>(albedo);
-                    world.add(make_shared<Sphere>(center, 1, sphere_material));
-                } else if (choose_mat < 0.95) {
-                    // metal
-                    auto albedo = Color::random(0.5, 1);
-                    auto fuzz = random_double(0, 0.5);
-                    sphere_material = make_shared<Metal>(albedo, fuzz);
-                    world.add(make_shared<Sphere>(center, 1, sphere_material));
-                } else {
-                    // glass
-                    sphere_material = make_shared<Dielectric>(1.5);
-                    world.add(make_shared<Sphere>(center, 1, sphere_material));
-                }
-            }
-        }
-    }
-
-    return world;
-}
-
 Hittable_List modified_cornell() {
     Hittable_List objects;
+    background = Color(0,0,0);
 
     auto red    = make_shared<Lambertian>(Color(.65, .05, .05));
     auto blue   = make_shared<Lambertian>(Color(.35, .35, 1));
@@ -137,16 +103,17 @@ Hittable_List modified_cornell() {
     objects.add(mirrorBox);
 
     // glass sphere
-    objects.add(make_shared<Sphere>(Point3( 0.0, 0.0, -2.0), 0.5, glass));
+    objects.add(make_shared<Sphere>(Point3( 0.0, 0.0, -2.0), 0.5, glass));       
     objects.add(make_shared<Sphere>(Point3( -1, -1, -3.0), 0.2, glass));
     objects.add(make_shared<Sphere>(Point3( 1, -1, -3.0), 0.2, glass));
     objects.add(make_shared<Sphere>(Point3( -1, 1, -3.0), 0.2, glass));
     objects.add(make_shared<Sphere>(Point3( 1, 1, -3.0), 0.2, glass));
+
     return objects;
 }
 
 Hittable_List test_scene() {
-    // background = Color(0.6,0.7,1);
+    background = Color(0,0,0.2);
     Hittable_List objects;
 
     auto material_ground = make_shared<Lambertian>(Color(0.8, 0.8, 0.0));
@@ -160,11 +127,58 @@ Hittable_List test_scene() {
     return objects;
 }
 
+Hittable_List playground() {
+    background = Color(0,0,0);
+    Hittable_List objects;
 
-int threads;
+    auto checker_ground = make_shared<Lambertian>(make_shared<Checker_Texture>(Color(0.5, 0.7, 0.3), Color(0.9, 0.9, 0.9)));
+    auto light = make_shared<Diffuse_Light>(Color(1,1,1));
+
+    objects.add(make_shared<Sphere>(Point3( 0.0, -100.5, -1.0), 100.0, checker_ground));
+    objects.add(make_shared<XY_Rect>(-10, 10, 7, 9, -10, light));
+    objects.add(make_shared<XY_Rect>(-11, 11, 4, 5, -11, light));
+    objects.add(make_shared<XY_Rect>(-12, 12, 1.5, 2, -12, light));
+
+    objects.add(make_shared<XY_Rect>(-10, 10, 7, 9, 10, light));
+    objects.add(make_shared<XY_Rect>(-11, 11, 4, 5, 11, light));
+    objects.add(make_shared<XY_Rect>(-12, 12, 1.5, 2, 12, light));
+
+    objects.add(make_shared<YZ_Rect>(7, 9, -10, 10, -10, light));
+    objects.add(make_shared<YZ_Rect>(4, 5, -11, 11, -11, light));
+    objects.add(make_shared<YZ_Rect>(1.5, 2, -12, 12, -12, light));
+
+    objects.add(make_shared<YZ_Rect>(7, 9, -10, 10, 10, light));
+    objects.add(make_shared<YZ_Rect>(4, 5, -11, 11, 11, light));
+    objects.add(make_shared<YZ_Rect>(1.5, 2, -12, 12, 12, light));
+
+
+    return objects;
+}
+
+void increaseSceneIndex(){
+    currentSceneIndex++;
+    if(currentSceneIndex > numOfDifferentScenes){
+        currentSceneIndex = 0;
+    }
+}
+
+void loadSceneByIndex(){
+    switch(currentSceneIndex){
+        case 0:
+            world = playground();
+            break;
+        case 1:
+            world = modified_cornell();
+            break;
+        case 2:
+            world = test_scene();
+            break;
+    }
+}
+
 void renderScene(Camera& cam, Mat& image){
 
-    threads = omp_get_max_threads();
+    int threads = omp_get_max_threads();
     omp_set_num_threads(threads);
 
     for (int j = image_height-1; j >= 0; --j) {
@@ -197,14 +211,20 @@ void renderScene(Camera& cam, Mat& image){
 
 void printExploreWelcomeMessage(){
     // show short intro message
-    std::cout << BOLDRED << "Welcome to my BasicRayTracer-Explorer!" << RESET << std::endl;
+    std::cout << BOLDRED << "Welcome to my BasicRayTracer-Explorer!\n" << RESET << std::endl;
     std::cout << BOLDWHITE <<   "[W-A-S-D / arrow-keys to move and rotate]\n" <<
                                 "[1-2 to move up and down]\n" <<
                                 "[3-4 to tilt up and down]\n" <<
                                 "[Q-E to zoom]\n" <<
-                                "[O to save the current render as output.tiff]\n" <<
+                                "[8-9-0 to set the sky to night-day-random color]\n" <<
+                                "[TAB to change the current scene]\n\n" <<
+
+                                "[G-H-J to spawn a diffuse-metallic-glass sphere]\n" <<
+                                "[B-N-M to spawn a diffuse-metallic-glass box]\n\n" <<
+
                                 "[SPACE to render scene in high quality (720p)]\n" <<
                                 "[ENTER to render scene in really high quality (1080p)]\n" <<
+                                "[O to save the current render as .tiff in ../generated_images/]\n" <<
                                 "[ESC to quit]\n" << RESET << std::endl;
 }
 
@@ -230,21 +250,20 @@ void setSuperHighQualityRender() {
     image_height = 1080;
 }
 
-void spawnRandomSphere(Point3 spawnPoint) {
+void spawnRandomSphere(Point3 spawnPoint, int material) {
     auto random_material = random_double();
-    float max_size = 0.8;
-    auto random_size = random_double() * max_size;
+    float min_size= 0.25;
+    float max_size = 0.75;
+    auto random_size = random_double(min_size, max_size);
     Point3 center = spawnPoint + (cam.getRelativeViewDirection() * spawnObjectDistance);
-
-    std::cout<<spawnPoint<<std::endl;
 
     shared_ptr<Material> sphere_material;
 
-    if (random_material < 0.33) {
+    if (material == 0) {
         // diffuse
         auto albedo = Color::random();
         sphere_material = make_shared<Lambertian>(albedo);
-    } else if (random_material < 0.66) {
+    } else if (material == 1) {
         // metal
         auto albedo = Color::random();
         auto fuzz = random_double(0, 0.5);
@@ -255,6 +274,33 @@ void spawnRandomSphere(Point3 spawnPoint) {
         sphere_material = make_shared<Dielectric>(random_double() + minRefraction);
     }   
     world.add(make_shared<Sphere>(center, random_size, sphere_material));
+}
+
+void spawnRandomBox(Point3 spawnPoint, int material) {
+    auto random_material = random_double();
+    float min_size= 0.25;
+    float max_size = 0.75;
+    auto random_size = random_double(min_size, max_size);
+
+    Point3 center = spawnPoint + (cam.getRelativeViewDirection() * spawnObjectDistance);
+
+    shared_ptr<Material> box_material;
+
+    if (material == 0) {
+        // diffuse
+        auto albedo = Color::random();
+        box_material = make_shared<Lambertian>(albedo);
+    } else if (material == 1) {
+        // metal
+        auto albedo = Color::random();
+        auto fuzz = random_double(0, 0.5);
+        box_material = make_shared<Metal>(albedo, fuzz);
+    } else {
+        // glass
+        float minRefraction = 1.2;
+        box_material = make_shared<Dielectric>(random_double() + minRefraction);
+    }   
+    world.add(make_shared<Box>(spawnPoint - Vec3(random_size/2), spawnPoint + Vec3(random_size/2), box_material));
 }
 
 void InitializeCamera(Camera &cam) {
@@ -313,12 +359,9 @@ int main(int argc, char* argv[]) {
     // Generate Camera
     InitializeCamera(cam);
 
-    // Generate World    
-    if(randomize_world){
-        world = random_scene();
-    } else {
-        world = test_scene();
-    }
+    // Initialize World, using standard index 0       
+    loadSceneByIndex();
+    
 
     // create image cv2-mat
     Mat image (image_height, image_width, CV_8UC3, Scalar(0,0,0));    
@@ -326,8 +369,9 @@ int main(int argc, char* argv[]) {
     if(explore) setLowQualityRender();
     // render initial scene-image
     
-    #pragma parallel
     renderScene(cam, image);
+
+    namedWindow("RayTracer", WINDOW_AUTOSIZE);
 
     #pragma region World-Exploring through movement, displayed in OpenCV window
     if(explore){        
@@ -335,8 +379,7 @@ int main(int argc, char* argv[]) {
             // set low-quality setting for faster rendering
             setLowQualityRender();      
             
-            namedWindow("RayTracer", WINDOW_AUTOSIZE);
-            imshow("RayTracer", image);
+            imshow("RayTracer", image);            
             
             char key = cv::waitKey(0);
 
@@ -358,8 +401,28 @@ int main(int argc, char* argv[]) {
                 cam.tiltCamera(Vec3(0, exploreStepSize, 0));
             }
 
-            if (key == 'b') {
-                spawnRandomSphere(cam.getCurrentDirection());
+            if (key == 'g'||key == 'G'){
+                spawnRandomSphere(cam.getCurrentDirection(), 0);
+            } else if (key == 'h'||key == 'H'){
+                spawnRandomSphere(cam.getCurrentDirection(), 1);
+            } else if (key == 'j'||key == 'J'){
+                spawnRandomSphere(cam.getCurrentDirection(), 2);
+            } 
+            
+            if (key == 'b'||key == 'B'){
+                spawnRandomBox(cam.getCurrentDirection(), 0);
+            } else if (key == 'n'||key == 'N'){
+                spawnRandomBox(cam.getCurrentDirection(), 1);
+            } else if (key == 'm'||key == 'M'){
+                spawnRandomBox(cam.getCurrentDirection(), 2);
+            }
+
+            if(key == '8'){
+                background = Color(0,0,0);
+            } else if (key == '9'){
+                background = Color(0.5, 0.7, 1);
+            } else if (key == '0'){
+                background = Color::random();
             }
 
             if (key == 2||key == 'a'||key == 'A'){ // left movement
@@ -382,15 +445,21 @@ int main(int argc, char* argv[]) {
                 resizeWindow("RayTracer", image_width, image_height);
             } 
 
-            if (key == 'o'){
-                imwrite("output.tiff",image);
-            }
-                        
-            if (key == 27){ // escape, end loop
-                explore = false;
+
+            if (key == 9){ // tab, switch through scenes
+                // safely increase (and wrap-around) scene index
+                increaseSceneIndex();
+                loadSceneByIndex();
+                // re-initialize camera to reset position, rotation, tilt...
+                InitializeCamera(cam);
             }
 
-            renderScene(cam, image);
+            if (key == 'o'){
+                std::string filename = random_string(10);
+                imwrite("../generated_images/" + filename + ".tiff",image);
+            } else if (key == 27){ // escape, end loop
+                explore = false;
+            } else renderScene(cam, image);
         }   
     } else {
         namedWindow("RayTracer", WINDOW_AUTOSIZE);// Create a window for display.
