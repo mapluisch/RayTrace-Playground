@@ -113,16 +113,18 @@ Hittable_List modified_cornell() {
 }
 
 Hittable_List test_scene() {
-    background = Color(0,0,0.2);
+    background = Color(0.9,0.75,0.5);
     Hittable_List objects;
 
-    auto material_ground = make_shared<Lambertian>(Color(0.8, 0.8, 0.0));
-    auto sphere_mat = make_shared<Dielectric>(1.5);
     auto light = make_shared<Diffuse_Light>(Color(1,1,1));
+    auto material_ground = make_shared<Lambertian>(Color(0.8, 0.8, 0.0));                        
+    auto hbrs_mat = make_shared<Lambertian>(Color(0.28, 0.6, 0.98));
 
-    objects.add(make_shared<XY_Rect>(-2, 2, 0, 2, -2, light));
-    objects.add(make_shared<Sphere>(Point3( 0.0, -100.5, -1.0), 100.0, material_ground));
-    objects.add(make_shared<Sphere>(Point3(-1.0,    0.0, -1.0),   0.5, sphere_mat));
+    objects.add(make_shared<XY_Rect>(-2, 2, 4, 6, 2, light));
+    // objects.add(make_shared<Sphere>(Point3( 0.0, -100.5, -1.0), 100.0, material_ground));
+    objects.add(make_shared<Sphere>(Point3(-0.55,    0.0, -1.0),   0.5, hbrs_mat));
+    objects.add(make_shared<Sphere>(Point3(-0.55,    0.0, -0.725),   0.3, light));
+    objects.add(make_shared<Sphere>(Point3(0.55,    0.0, -1.0),   0.5, hbrs_mat));
 
     return objects;
 }
