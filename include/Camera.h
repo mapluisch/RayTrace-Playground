@@ -110,6 +110,40 @@ class Camera {
             lens_radius = camAperture / 2;
         }
 
+        void updateFocusDistance(double focusDistChange) {
+            camFocusDistance += focusDistChange;
+            auto theta = degrees_to_radians(fov);
+            auto h = tan(theta/2);
+            auto viewport_height = 2.0 * h;
+            auto viewport_width = aspectRatio * viewport_height;
+
+            w = unit_vector(origin - lookAt);
+            u = unit_vector(cross(camUp, w));
+            v = cross(w, u);
+
+            horizontal = camFocusDistance * viewport_width * u;
+            vertical = camFocusDistance * viewport_height * v;
+            lower_left_corner = origin - horizontal/2 - vertical/2 - camFocusDistance*w;
+            lens_radius = camAperture / 2;
+        }
+
+        void updateAperture(double apertureChange) {
+            camAperture += apertureChange;
+            auto theta = degrees_to_radians(fov);
+            auto h = tan(theta/2);
+            auto viewport_height = 2.0 * h;
+            auto viewport_width = aspectRatio * viewport_height;
+
+            w = unit_vector(origin - lookAt);
+            u = unit_vector(cross(camUp, w));
+            v = cross(w, u);
+
+            horizontal = camFocusDistance * viewport_width * u;
+            vertical = camFocusDistance * viewport_height * v;
+            lower_left_corner = origin - horizontal/2 - vertical/2 - camFocusDistance*w;
+            lens_radius = camAperture / 2;
+        }
+
         Ray get_ray(double s, double t) const {
             Vec3 rd = lens_radius * random_in_unit_disk();
             Vec3 offset = u * rd.x() + v * rd.y();

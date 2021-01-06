@@ -46,7 +46,7 @@ inline double clamp(double x, double min, double max) {
 // source: https://stackoverflow.com/questions/14539867/how-to-display-a-progress-indicator-in-pure-c-c-cout-printf
 // a bit modified by me, using unix color codes from https://stackoverflow.com/questions/9158150/colored-output-in-c/9158263
 #define PBSTR "||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||"
-#define PBWIDTH 60
+#define PBWIDTH 50
 #define BLUE            "\033[34m" 
 #define BOLDYELLOW      "\033[1m\033[33m"
 #define BOLDRED         "\033[1m\033[31m"

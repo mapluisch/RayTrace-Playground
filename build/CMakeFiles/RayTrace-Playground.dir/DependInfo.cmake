@@ -4,7 +4,7 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_CXX
-  "/Users/martinpluisch/Development/BasicRayTracing/src/RayTracer.cpp" "/Users/martinpluisch/Development/BasicRayTracing/build/CMakeFiles/RayTracer.dir/src/RayTracer.cpp.o"
+  "/Users/martinpluisch/Development/BasicRayTracing/src/RayTracer.cpp" "/Users/martinpluisch/Development/BasicRayTracing/build/CMakeFiles/RayTrace-Playground.dir/src/RayTracer.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "Clang")
 

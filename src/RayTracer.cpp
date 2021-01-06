@@ -1,11 +1,11 @@
-#include <iostream>
-#include <fstream>      // used for writing image to file
-#include <cxxopts.hpp>  // used for nicer argument parsing
 #include <math.h>
-#include <omp.h>
+#include <omp.h>                // used for parallel/multi-processing
+#include <iostream>
+#include <cxxopts.hpp>          // used for nicer argument parsing
+#include <opencv2/opencv.hpp>   // used for displaying rendered frame directly and moving around the scenery
+
 
 #include "Utilities.h"
-
 #include "Color.h"
 #include "Hittable_List.h"
 #include "Sphere.h"
@@ -15,25 +15,42 @@
 #include "Box.h"
 #include "Constant_Medium.h"
 
-#include <opencv2/opencv.hpp>
 using namespace cv;
 
+// --- VARIABLES ---
+#pragma region Variables
+// -- Camera vars --
+Camera cam;
 int image_width;
 int image_height;
 int samples_per_pixel;
 int max_depth;
 double vfov;
-bool randomize_world;
+// -- Scene vars --
 Hittable_List world;
 Color background(0,0,0);
 int spawnObjectDistance = 1;
-Camera cam;
-
 int currentSceneIndex = 0;
 int numOfDifferentScenes = 2;
 
+// -- Exploration vars --
+// rotation angle in degree per step (= key-press)
+float rotationAngle = 10;
+// units to move per arrow-keypress
+float exploreStepSize = 0.1;
+// units to increase/decrease fov per step
+float vfovStep = 1;
+
+#pragma endregion
+// -----------------
+
+
+// --- RAYTRACING + RENDERING ---
+#pragma region RayTracing and Rendering
+/// helper-struct for more efficient mat-pixel settings (per https://stackoverflow.com/questions/23001512/c-and-opencv-get-and-set-pixel-color-to-mat)
 struct RGB {uchar blue; uchar green; uchar red;};
 
+/// Calculates and returns a ray's color in a given scene, for a given maximum recursion-depth
 Color ray_color(const Ray& r, const Color& background, const Hittable& world, int depth) {
     Hit hit;
 
@@ -56,130 +73,8 @@ Color ray_color(const Ray& r, const Color& background, const Hittable& world, in
     return emitted + attenuation * ray_color(scattered, background, world, depth-1);
 }
 
-Hittable_List modified_cornell() {
-    Hittable_List objects;
-    background = Color(0,0,0);
-
-    auto red    = make_shared<Lambertian>(Color(.65, .05, .05));
-    auto blue   = make_shared<Lambertian>(Color(.35, .35, 1));
-    auto white  = make_shared<Lambertian>(Color(.73, .73, .73));
-    auto green  = make_shared<Lambertian>(Color(.12, .45, .15));
-    auto yellow = make_shared<Lambertian>(Color(0.9, 0.8, 0.1));
-    auto light  = make_shared<Diffuse_Light>(Color(1,1,1));
-    auto mirror = make_shared<Metal>(Color(0.7,0.7,0.7), 0.0);
-    auto metal  = make_shared<Metal>(Color(0.2, 0.4, 0.8), 0.3);
-    auto glass  = make_shared<Dielectric>(1.5);
-    auto pertext = make_shared<Noise_Texture>(0.1);
-
-
-    // left
-    objects.add(make_shared<YZ_Rect>(-5, 5, -10, 0, -5, green));
-    // right
-    objects.add(make_shared<YZ_Rect>(-5, 5, -10, 0, 5, yellow));
-    // top
-    objects.add(make_shared<XZ_Rect>(-5, 5, -10, 0, 5, red));
-    // bottom
-    objects.add(make_shared<XZ_Rect>(-5, 5, -10, 0, -5, red));
-    // back
-    objects.add(make_shared<XY_Rect>(-5, 5, -5, 5, -10, white));
-    // front
-    objects.add(make_shared<XY_Rect>(-5, 5, -5, 5, 0.1, white));
-
-    // light top
-    objects.add(make_shared<XZ_Rect>(-0.5, 0.5, -10, 0, 5, light));
-    // light bar left
-    objects.add(make_shared<YZ_Rect>(-1, 1, -10, 0, -5, light));
-    // light bar right
-    objects.add(make_shared<YZ_Rect>(-1, 1, -10, 0, 5, light));
-    objects.add(make_shared<XZ_Rect>(-0.5, 0.5, -10, 0, -5, light));
-
-    // boxes
-    objects.add(make_shared<Box>(Point3(-3, -5, -8), Point3(-1, 1, -6), metal));
-
-    // mirror box
-    shared_ptr<Hittable> mirrorBox = make_shared<Box>(Point3(-2, -5, -6), Point3(2, 3, -4), mirror);
-    mirrorBox = make_shared<RotateY>(mirrorBox, 25);
-    mirrorBox = make_shared<Translate>(mirrorBox, Vec3(4,0,-4));
-    objects.add(mirrorBox);
-
-    // glass sphere
-    objects.add(make_shared<Sphere>(Point3( 0.0, 0.0, -2.0), 0.5, glass));       
-    objects.add(make_shared<Sphere>(Point3( -1, -1, -3.0), 0.2, glass));
-    objects.add(make_shared<Sphere>(Point3( 1, -1, -3.0), 0.2, glass));
-    objects.add(make_shared<Sphere>(Point3( -1, 1, -3.0), 0.2, glass));
-    objects.add(make_shared<Sphere>(Point3( 1, 1, -3.0), 0.2, glass));
-
-    return objects;
-}
-
-Hittable_List test_scene() {
-    background = Color(0.9,0.75,0.5);
-    Hittable_List objects;
-
-    auto light = make_shared<Diffuse_Light>(Color(1,1,1));
-    auto material_ground = make_shared<Lambertian>(Color(0.8, 0.8, 0.0));                        
-    auto hbrs_mat = make_shared<Lambertian>(Color(0.28, 0.6, 0.98));
-
-    objects.add(make_shared<XY_Rect>(-2, 2, 4, 6, 2, light));
-    // objects.add(make_shared<Sphere>(Point3( 0.0, -100.5, -1.0), 100.0, material_ground));
-    objects.add(make_shared<Sphere>(Point3(-0.55,    0.0, -1.0),   0.5, hbrs_mat));
-    objects.add(make_shared<Sphere>(Point3(-0.55,    0.0, -0.725),   0.3, light));
-    objects.add(make_shared<Sphere>(Point3(0.55,    0.0, -1.0),   0.5, hbrs_mat));
-
-    return objects;
-}
-
-Hittable_List playground() {
-    background = Color(0,0,0);
-    Hittable_List objects;
-
-    auto checker_ground = make_shared<Lambertian>(make_shared<Checker_Texture>(Color(0.5, 0.7, 0.3), Color(0.9, 0.9, 0.9)));
-    auto light = make_shared<Diffuse_Light>(Color(1,1,1));
-
-    objects.add(make_shared<Sphere>(Point3( 0.0, -100.5, -1.0), 100.0, checker_ground));
-    objects.add(make_shared<XY_Rect>(-10, 10, 7, 9, -10, light));
-    objects.add(make_shared<XY_Rect>(-11, 11, 4, 5, -11, light));
-    objects.add(make_shared<XY_Rect>(-12, 12, 1.5, 2, -12, light));
-
-    objects.add(make_shared<XY_Rect>(-10, 10, 7, 9, 10, light));
-    objects.add(make_shared<XY_Rect>(-11, 11, 4, 5, 11, light));
-    objects.add(make_shared<XY_Rect>(-12, 12, 1.5, 2, 12, light));
-
-    objects.add(make_shared<YZ_Rect>(7, 9, -10, 10, -10, light));
-    objects.add(make_shared<YZ_Rect>(4, 5, -11, 11, -11, light));
-    objects.add(make_shared<YZ_Rect>(1.5, 2, -12, 12, -12, light));
-
-    objects.add(make_shared<YZ_Rect>(7, 9, -10, 10, 10, light));
-    objects.add(make_shared<YZ_Rect>(4, 5, -11, 11, 11, light));
-    objects.add(make_shared<YZ_Rect>(1.5, 2, -12, 12, 12, light));
-
-
-    return objects;
-}
-
-void increaseSceneIndex(){
-    currentSceneIndex++;
-    if(currentSceneIndex > numOfDifferentScenes){
-        currentSceneIndex = 0;
-    }
-}
-
-void loadSceneByIndex(){
-    switch(currentSceneIndex){
-        case 0:
-            world = playground();
-            break;
-        case 1:
-            world = modified_cornell();
-            break;
-        case 2:
-            world = test_scene();
-            break;
-    }
-}
-
+/// Renders the current world-scene onto a passed-in OpenCV Mat using a passed-in camera object
 void renderScene(Camera& cam, Mat& image){
-
     int threads = omp_get_max_threads();
     omp_set_num_threads(threads);
 
@@ -204,39 +99,157 @@ void renderScene(Camera& cam, Mat& image){
             r = sqrt(scale * r);
             g = sqrt(scale * g);
             b = sqrt(scale * b); 
-
+            
             RGB& rgb = image.ptr<RGB>(image_height - j)[i];
             rgb.blue = b*255; rgb.green = g*255; rgb.red = r*255;
         }
     }
 }
 
-void printExploreWelcomeMessage(){
-    // show short intro message
-    std::cout << BOLDRED << "Welcome to my BasicRayTracer-Explorer!\n" << RESET << std::endl;
-    std::cout << BOLDWHITE <<   "[W-A-S-D / arrow-keys to move and rotate]\n" <<
-                                "[1-2 to move up and down]\n" <<
-                                "[3-4 to tilt up and down]\n" <<
-                                "[Q-E to zoom]\n" <<
-                                "[8-9-0 to set the sky to night-day-random color]\n" <<
-                                "[TAB to change the current scene]\n\n" <<
+#pragma endregion
+// ------------------------------
 
-                                "[G-H-J to spawn a diffuse-metallic-glass sphere]\n" <<
-                                "[B-N-M to spawn a diffuse-metallic-glass box]\n\n" <<
 
-                                "[SPACE to render scene in high quality (720p)]\n" <<
-                                "[ENTER to render scene in really high quality (1080p)]\n" <<
-                                "[O to save the current render as .tiff in ../generated_images/]\n" <<
-                                "[ESC to quit]\n" << RESET << std::endl;
+// --- CAMERA INIT ---
+#pragma region Camera Init
+/// Initializes the camera object for the current runtime
+void initializeCamera(Camera &cam) {
+    Point3 currentCamPosition (0,0,0);
+    Point3 camDirection = currentCamPosition + Vec3(0,0,-1);
+    Vec3 camUp (0,1,0);
+    double camAperture = 0.0;
+    double camFocusDistance = (currentCamPosition-camDirection).length();
+    Camera c(currentCamPosition, camDirection, camUp, image_width, image_height, vfov, camAperture, camFocusDistance);
+    cam = c;
+}
+#pragma endregion
+// -------------------
+
+
+// --- PRESET SCENE DEFINITION ---
+#pragma region Preset Scene Definition
+/// returns my version of a "cornell-box"
+Hittable_List modified_cornell() {
+    Hittable_List objects;
+    background = Color(0,0,0);
+
+    auto red    = make_shared<Lambertian>(Color(.65, .05, .05));
+    auto blue   = make_shared<Lambertian>(Color(.35, .35, 1));
+    auto white  = make_shared<Lambertian>(Color(.73, .73, .73));
+    auto green  = make_shared<Lambertian>(Color(.12, .45, .15));
+    auto yellow = make_shared<Lambertian>(Color(0.9, 0.8, 0.1));
+    auto light  = make_shared<Diffuse_Light>(Color(1,1,1));
+    auto mirror = make_shared<Metal>(Color(0.7,0.7,0.7), 0.0);
+    auto metal  = make_shared<Metal>(Color(0.2, 0.4, 0.8), 0.3);
+    auto glass  = make_shared<Dielectric>(1.5);
+    auto pertext = make_shared<Noise_Texture>(0.1);
+
+    // wall left
+    objects.add(make_shared<YZ_Rect>(-5, 5, -10, 0, -5, green));
+    // wall right
+    objects.add(make_shared<YZ_Rect>(-5, 5, -10, 0, 5, yellow));
+    // ceiling
+    objects.add(make_shared<XZ_Rect>(-5, 5, -10, 0, 5, red));
+    // ground
+    objects.add(make_shared<XZ_Rect>(-5, 5, -10, 0, -5, red));
+    // wall back
+    objects.add(make_shared<XY_Rect>(-5, 5, -5, 5, -10, white));
+    // wall front
+    objects.add(make_shared<XY_Rect>(-5, 5, -5, 5, 0.1, white));
+
+    // light-bar top
+    objects.add(make_shared<XZ_Rect>(-0.5, 0.5, -10, 0, 5, light));
+    // light-bar left
+    objects.add(make_shared<YZ_Rect>(-1, 1, -10, 0, -5, light));
+    // light-bar right
+    objects.add(make_shared<YZ_Rect>(-1, 1, -10, 0, 5, light));
+    // light-bar ground
+    objects.add(make_shared<XZ_Rect>(-0.5, 0.5, -10, 0, -5, light));
+
+    // metal box
+    objects.add(make_shared<Box>(Point3(-3, -5, -8), Point3(-1, 1, -6), metal));
+
+    // mirror box
+    shared_ptr<Hittable> mirrorBox = make_shared<Box>(Point3(-2, -5, -6), Point3(2, 3, -4), mirror);
+    mirrorBox = make_shared<RotateY>(mirrorBox, 25);
+    mirrorBox = make_shared<Translate>(mirrorBox, Vec3(4,0,-4));
+    objects.add(mirrorBox);
+
+    // glass spheres
+    objects.add(make_shared<Sphere>(Point3( 0.0, 0.0, -2.0), 0.5, glass));       
+    objects.add(make_shared<Sphere>(Point3( -1, -1, -3.0), 0.2, glass));
+    objects.add(make_shared<Sphere>(Point3( 1, -1, -3.0), 0.2, glass));
+    objects.add(make_shared<Sphere>(Point3( -1, 1, -3.0), 0.2, glass));
+    objects.add(make_shared<Sphere>(Point3( 1, 1, -3.0), 0.2, glass));
+
+    return objects;
 }
 
+/// returns a test-scene with (a close-enough :)) H-BRS-Logo
+Hittable_List test_scene() {
+    background = Color(0.9,0.75,0.5);
+    Hittable_List objects;
+
+    auto light = make_shared<Diffuse_Light>(Color(1,1,1));
+    auto material_ground = make_shared<Lambertian>(Color(0.8, 0.8, 0.0));                        
+    auto hbrs_mat = make_shared<Lambertian>(Color(0.28, 0.6, 0.98));
+    
+    // light bar
+    objects.add(make_shared<XY_Rect>(-2, 2, 4, 6, 2, light));
+    // left sphere
+    objects.add(make_shared<Sphere>(Point3(-0.55,    0.0, -1.0),   0.5, hbrs_mat));
+    // "white" inner sphere, use light instead of white for nicer visuals
+    objects.add(make_shared<Sphere>(Point3(-0.55,    0.0, -0.725),   0.3, light));
+    // right sphere
+    objects.add(make_shared<Sphere>(Point3(0.55,    0.0, -1.0),   0.5, hbrs_mat));
+
+    return objects;
+}
+
+/// returns an empty, well-illuminated "playground"
+Hittable_List playground() {
+    // set to "night time" for better light-fx
+    background = Color(0,0,0);
+    Hittable_List objects;
+
+    auto checker_ground = make_shared<Lambertian>(make_shared<Checker_Texture>(Color(0.5, 0.7, 0.3), Color(0.9, 0.9, 0.9)));
+    auto light = make_shared<Diffuse_Light>(Color(1,1,1));
+
+    // ground
+    objects.add(make_shared<Sphere>(Point3( 0.0, -100.5, -1.0), 100.0, checker_ground));
+    // light bars at the back
+    objects.add(make_shared<XY_Rect>(-10, 10, 7, 9, -10, light));
+    objects.add(make_shared<XY_Rect>(-11, 11, 4, 5, -11, light));
+    objects.add(make_shared<XY_Rect>(-12, 12, 1.5, 2, -12, light));
+    // light bars at the front
+    objects.add(make_shared<XY_Rect>(-10, 10, 7, 9, 10, light));
+    objects.add(make_shared<XY_Rect>(-11, 11, 4, 5, 11, light));
+    objects.add(make_shared<XY_Rect>(-12, 12, 1.5, 2, 12, light));
+    // light bars to the left
+    objects.add(make_shared<YZ_Rect>(7, 9, -10, 10, -10, light));
+    objects.add(make_shared<YZ_Rect>(4, 5, -11, 11, -11, light));
+    objects.add(make_shared<YZ_Rect>(1.5, 2, -12, 12, -12, light));
+    // light bars to the right
+    objects.add(make_shared<YZ_Rect>(7, 9, -10, 10, 10, light));
+    objects.add(make_shared<YZ_Rect>(4, 5, -11, 11, 11, light));
+    objects.add(make_shared<YZ_Rect>(1.5, 2, -12, 12, 12, light));
+
+    return objects;
+}
+#pragma endregion
+// -------------------------------
+
+
+// --- RENDER-QUALITY ---
+#pragma region Render Quality Setters
+/// Sets Low Quality settings used as standard settings for the explorer-mode.
 void setLowQualityRender() {
     samples_per_pixel = 3;
     max_depth = 3;
     image_width = 400;
     image_height = 225;
 }
-
+/// Sets 720p - High Quality render settings for pretty fast rendering with a decent output.
 void setHighQualityRender() {
     samples_per_pixel = 20;
     max_depth = 20;
@@ -244,15 +257,22 @@ void setHighQualityRender() {
     image_height = 720;
 }
 
-// warning! super high quality can take quite some time (multiple minutes, upto hours, depending on the scene) to compute :)
+/// Sets 1080p - Super High Quality render settings for very slow rendering but really nice output.
+/// Warning! Super High Quality can take quite some time (multiple minutes, depending on the scene) to compute :)
 void setSuperHighQualityRender() {
     samples_per_pixel = 1000;
     max_depth = 50;
     image_width = 1920;
     image_height = 1080;
 }
+#pragma endregion
+// ----------------------
 
-void spawnRandomSphere(Point3 spawnPoint, int material) {
+
+// --- OBJECT GENERATION ---
+#pragma region Object Generation
+/// Generates and adds a sphere of random size at a specified position with a specified material
+void spawnSphere(Point3 spawnPoint, int material) {
     auto random_material = random_double();
     float min_size= 0.25;
     float max_size = 0.75;
@@ -278,7 +298,8 @@ void spawnRandomSphere(Point3 spawnPoint, int material) {
     world.add(make_shared<Sphere>(center, random_size, sphere_material));
 }
 
-void spawnRandomBox(Point3 spawnPoint, int material) {
+/// Generates and adds a box of random size at a specified position with a specified material
+void spawnBox(Point3 spawnPoint, int material) {
     auto random_material = random_double();
     float min_size= 0.25;
     float max_size = 0.75;
@@ -304,32 +325,81 @@ void spawnRandomBox(Point3 spawnPoint, int material) {
     }   
     world.add(make_shared<Box>(spawnPoint - Vec3(random_size/2), spawnPoint + Vec3(random_size/2), box_material));
 }
+#pragma endregion
+// -------------------------
 
-void InitializeCamera(Camera &cam) {
-    Point3 currentCamPosition (0,0,0);
-    Point3 camDirection = currentCamPosition + Vec3(0,0,-1);
-    Vec3 camUp (0,1,0);
-    double camAperture = 0.0;
-    double camFocusDistance = (currentCamPosition-camDirection).length();
-    Camera c(currentCamPosition, camDirection, camUp, image_width, image_height, vfov, camAperture, camFocusDistance);
-    cam = c;
+
+// --- MISC HELPER FUNCTIONS ---
+#pragma region Misc. Helper Functions
+/// Increases current scene-index (used for switching between scenes) and takes care of value-wrap-around
+void increaseSceneIndex(){
+    currentSceneIndex++;
+    if(currentSceneIndex > numOfDifferentScenes){
+        currentSceneIndex = 0;
+    }
 }
 
+/// Loads scene specified by current scene-index, by (re-)setting the world variable
+void loadSceneByIndex(){
+    switch(currentSceneIndex){
+        case 0:
+            world = playground();
+            break;
+        case 1:
+            world = modified_cornell();
+            break;
+        case 2:
+            world = test_scene();
+            break;
+    }
+}
+
+/// Prints a short intro-/tutorial-message for the Explorer-feature
+void printExploreWelcomeMessage(){
+    // show short intro message
+    std::cout << BOLDRED << "Welcome to my RayTrace-Playground!\n" << RESET << std::endl;
+    std::cout << BOLDWHITE <<   "[W-A-S-D to move and rotate]\n" <<
+                                "[1-2 to move up and down]\n" <<
+                                "[3-4 to tilt up and down]\n" <<
+                                "[Q-E to zoom]\n" <<
+                                "[R-T to modify focus distance]\n" <<
+                                "[Z-U to modify aperture]\n" <<
+                                "[8-9-0 to set the sky to night-day-random color]\n" <<
+                                "[TAB to change the current scene]\n\n" <<
+
+                                "[G-H-J to spawn a diffuse-metallic-glass sphere]\n" <<
+                                "[B-N-M to spawn a diffuse-metallic-glass box]\n\n" <<
+
+                                "[SPACE to render scene in high quality (720p)]\n" <<
+                                "[ENTER to render scene in really high quality (1080p)]\n" <<
+                                "[O to save the current render as .tiff in ../generated_images/]\n" <<
+                                "[ESC to quit]\n" << RESET << std::endl;
+}
+
+#pragma endregion
+// -----------------------------
+
+
 int main(int argc, char* argv[]) {
-    // CXXOPTS Init and Parsing
+    #pragma region CXXOPTS Init
+    // CXXOPTS Init
     // Create CXXOPTS-Argument parser for nice argument input
-    cxxopts::Options options("RayTracer", "A basic RayTracer, based on 'Ray Tracing In One Weekend' by Peter Shirley, adapted and extended by Martin Pluisch.");
+    cxxopts::Options options("RayTrace-Playground", "A basic RayTracer, based on 'Ray Tracing In One Weekend' and 'Ray Tracing The Next Week', adapted and extended by Martin Pluisch.");
     options.add_options()
-        ("h,help", "Print usage information")
-        ("x,width", "Image width in pixel", cxxopts::value<int>())
-        ("y,height", "Image height in pixel", cxxopts::value<int>())
-        ("s,samples_per_pixel", "Samples per pixel", cxxopts::value<int>())
-        ("d,depth", "Maximum recursion depth for each ray", cxxopts::value<int>())
-        ("f,fov", "Camera's vertical field of view", cxxopts::value<double>())
-        ("o,output", "Output file name", cxxopts::value<std::string>())
-        ("r,random", "Boolean whether to create a random scene-world or not", cxxopts::value<bool>())
-        ("e,explore", "Boolean whether to be able to navigate through the scene", cxxopts::value<bool>())
+        ("h,help",                  "Print usage information")
+        ("x,width",                 "Image width in pixel",                         cxxopts::value<int>())
+        ("y,height",                "Image height in pixel",                        cxxopts::value<int>())
+        ("s,samples_per_pixel",     "Samples per pixel",                            cxxopts::value<int>())
+        ("d,depth",                 "Maximum recursion depth for each ray",         cxxopts::value<int>())
+        ("f,fov",                   "Camera's vertical field of view",              cxxopts::value<double>())
+        ("o,output",                "Output file name, without file extension",     cxxopts::value<std::string>())
+
+        ("e,explore",               "Start explorer mode",                          cxxopts::value<bool>())
     ;
+    #pragma endregion
+
+    #pragma region CXXOPTS Parsing
+    // -- CXXOPTS Parsing --
     auto result = options.parse(argc, argv);
 
     if (result.count("help") == 1) {
@@ -337,136 +407,226 @@ int main(int argc, char* argv[]) {
       exit(0);
     }
 
-    // CXXOPTS Parsing
-    // Read and store passed in arguments or default to 16:9-resolution with 50 samples per pixel
+    // Read and store passed in arguments or default to 400x225 (16:9) resolution with 100 samples per pixel
     image_width         = (result.count("width") ? result["width"].as<int>() : 400);
     image_height        = (result.count("height") ? result["height"].as<int>() : 225);
     samples_per_pixel   = (result.count("samples_per_pixel") ? result["samples_per_pixel"].as<int>() : 50);
     max_depth           = (result.count("depth") ? result["depth"].as<int>() : 50);
     vfov                = (result.count("fov") ? result["fov"].as<double>() : 90);
-    randomize_world     = (result.count("random") ? result["random"].as<bool>() : false);
+    std::string output  = (result.count("output") ? result["output"].as<std::string>() : "output");
     bool explore        = (result.count("explore") ? result["explore"].as<bool>() : false);
-    //
+    #pragma endregion
     
     if(explore){
+        // if user enters explore-mode, print quick tutorial/welcome-message
         printExploreWelcomeMessage();
+    } else {
+        // otherwise set scene-to-render to my modified "cornell"-box
+        currentSceneIndex = 1;
     }
 
-    // Exploration vars
-    // hardcoded possible cam rotations (= cam lookat directions)
-    float rotationAngle = 10;
-    float exploreStepSize = 0.1; // units to move per arrow-keypress
-    float vfovStep = 1;
-
     // Generate Camera
-    InitializeCamera(cam);
-
+    initializeCamera(cam);
     // Initialize World, using standard index 0       
-    loadSceneByIndex();
-    
-
+    loadSceneByIndex();    
     // create image cv2-mat
-    Mat image (image_height, image_width, CV_8UC3, Scalar(0,0,0));    
+    Mat image (image_height, image_width, CV_8UC3, Scalar(0,0,0));
     // overwrite standard render-quality settings for faster first-frame rendering in explore mode
-    if(explore) setLowQualityRender();
+    if(explore) setLowQualityRender();    
     // render initial scene-image
-    
     renderScene(cam, image);
-
-    namedWindow("RayTracer", WINDOW_AUTOSIZE);
+    // create OpenCV window
+    namedWindow("RayTrace-Playground", WINDOW_AUTOSIZE);
 
     #pragma region World-Exploring through movement, displayed in OpenCV window
     if(explore){        
         while(explore){
-            // set low-quality setting for faster rendering
+            // (re-)set low-quality setting for faster rendering and thus allow "real-time" exploration
             setLowQualityRender();      
             
-            imshow("RayTracer", image);            
-            
+            // show rendered image using opencv
+            imshow("RayTrace-Playground", image);
+
+            // read input-keys
             char key = cv::waitKey(0);
 
-            if(key == 'e'){
-                cam.updateFOV(-vfovStep);
-            } else if (key == 'q'){
-                cam.updateFOV(vfovStep);
-            }
-
-            if(key == '1'){
-                cam.moveCamera(Vec3(0,-exploreStepSize,0));
-            } else if(key == '2'){
-                cam.moveCamera(Vec3(0,exploreStepSize,0));
-            }
-
-            if (key == '3'){
-                cam.tiltCamera(Vec3(0, -exploreStepSize, 0));
-            } else if (key == '4'){
-                cam.tiltCamera(Vec3(0, exploreStepSize, 0));
-            }
-
+            // ===== INTERPRET INPUT KEYS =====
+            #pragma region Object-Generation
+            // --- SPHERE GENERATION + SPAWNING ---
+            // diffuse sphere
             if (key == 'g'||key == 'G'){
-                spawnRandomSphere(cam.getCurrentDirection(), 0);
-            } else if (key == 'h'||key == 'H'){
-                spawnRandomSphere(cam.getCurrentDirection(), 1);
-            } else if (key == 'j'||key == 'J'){
-                spawnRandomSphere(cam.getCurrentDirection(), 2);
-            } 
+                spawnSphere(cam.getCurrentDirection(), 0);
+            }
+            // metallic sphere
+            else if (key == 'h'||key == 'H'){
+                spawnSphere(cam.getCurrentDirection(), 1);
+            }
+            // glass sphere
+            else if (key == 'j'||key == 'J'){
+                spawnSphere(cam.getCurrentDirection(), 2);
+            }
+            // ------------------------------------
             
+            // --- BOX GENERATION + SPAWNING ---
+            // diffuse box
             if (key == 'b'||key == 'B'){
-                spawnRandomBox(cam.getCurrentDirection(), 0);
-            } else if (key == 'n'||key == 'N'){
-                spawnRandomBox(cam.getCurrentDirection(), 1);
-            } else if (key == 'm'||key == 'M'){
-                spawnRandomBox(cam.getCurrentDirection(), 2);
+                spawnBox(cam.getCurrentDirection(), 0);
+            } 
+            // metallic box
+            else if (key == 'n'||key == 'N'){
+                spawnBox(cam.getCurrentDirection(), 1);
             }
-
-            if(key == '8'){
-                background = Color(0,0,0);
-            } else if (key == '9'){
-                background = Color(0.5, 0.7, 1);
-            } else if (key == '0'){
-                background = Color::random();
+            // glass box
+            else if (key == 'm'||key == 'M'){
+                spawnBox(cam.getCurrentDirection(), 2);
             }
+            // ---------------------------------
+            #pragma endregion
 
-            if (key == 2||key == 'a'||key == 'A'){ // left movement
-                cam.rotateCamera(-rotationAngle);
-            } else if (key == 0||key == 'w'||key == 'W'){ // up movement
+            #pragma region Camera-Manipulation
+            // --- CAMERA MOVEMENT ---
+            // forward movement
+            if (key == 'w'||key == 'W'){
                 cam.moveCamera(cam.getRelativeViewDirection() * exploreStepSize);
-            } else if (key == 3||key == 'd'||key == 'D'){ // right movement
-                cam.rotateCamera(rotationAngle);
-            } else if (key == 1||key == 's'||key == 'S'){ // down movement
+            } 
+            // backwards movement
+            else if (key == 's'||key == 'S'){
                 cam.moveCamera(cam.getRelativeViewDirection() * -exploreStepSize);
             }
-            
-            if (key == 32){ // spacebar -> render image in 1080p
+            // downwards movement
+            else if(key == '1'){
+                cam.moveCamera(Vec3(0,-exploreStepSize,0));
+            } 
+            // upwards movement
+            else if(key == '2'){
+                cam.moveCamera(Vec3(0,exploreStepSize,0));
+            }
+            // -----------------------
+
+
+            // --- CAMERA ROTATION ---
+            // left-rotation
+            if (key == 'a'){
+                cam.rotateCamera(-rotationAngle);
+            } 
+            // right-rotation
+            else if (key == 'd'){
+                cam.rotateCamera(rotationAngle);
+            } 
+            // tilt downwards
+            else if (key == '3'){
+                cam.tiltCamera(Vec3(0, -exploreStepSize, 0));
+            } 
+            // tilt upwards
+            else if (key == '4'){
+                cam.tiltCamera(Vec3(0, exploreStepSize, 0));
+            }
+            // -----------------------
+
+
+            // --- FOCUS DISTANCE ---
+            // focusDistance decrease
+            if (key == 'r'){
+                cam.updateFocusDistance(-exploreStepSize);
+            } 
+            // focusDistance increase
+            else if (key == 't'){
+                cam.updateFocusDistance(exploreStepSize);
+            }
+            // ----------------------
+
+
+            // --- APERTURE ---
+            // Aperture decrease
+            if (key == 'z'){
+                cam.updateAperture(-exploreStepSize);
+            } 
+            // Aperture increase
+            else if (key == 'u'){
+                cam.updateAperture(exploreStepSize);
+            }
+            // ----------------
+
+
+            // --- FIELD OF VIEW ---
+            // decrease fov
+            if(key == 'e'){
+                cam.updateFOV(-vfovStep);
+            }
+            // increase fov
+            else if (key == 'q'){
+                cam.updateFOV(vfovStep);
+            }
+            // ---------------------
+            #pragma endregion
+
+            #pragma region Full-Rendering
+            // --- FULL RENDERING ---
+            // 720p, high quality render, press SPACE
+            if (key == 32){ 
                 setHighQualityRender();
                 resize(image, image, cv::Size(image_width, image_height));
                 resizeWindow("RayTracer", image_width, image_height);
-            } else if (key == 13){
+            }
+            // 1080p, very high quality render, press ENTER
+            else if (key == 13){
                 setSuperHighQualityRender();
                 resize(image, image, cv::Size(image_width, image_height));
                 resizeWindow("RayTracer", image_width, image_height);
             } 
+            // ----------------------
+            #pragma endregion
+
+            #pragma region Misc. Tools/Manipulations
+            // --- BACKGROUND/SKYBOX SWITCH ---
+            // pitch-black sky
+            if(key == '8'){
+                background = Color(0,0,0);
+            } 
+            // light blue, daylight sky
+            else if (key == '9'){
+                background = Color(0.5, 0.7, 1);
+            }
+            // random color
+            else if (key == '0'){
+                background = Color::random();
+            }
+            // --------------------------------
 
 
-            if (key == 9){ // tab, switch through scenes
+            // --- SCENE SWITCHER ---
+            // TAB-key
+            if (key == 9){  
                 // safely increase (and wrap-around) scene index
                 increaseSceneIndex();
                 loadSceneByIndex();
                 // re-initialize camera to reset position, rotation, tilt...
-                InitializeCamera(cam);
+                initializeCamera(cam);
             }
+            // ----------------------
 
+            
+            // --- GENERAL ---
+            // Save output image
             if (key == 'o'){
                 std::string filename = random_string(10);
                 imwrite("../generated_images/" + filename + ".tiff",image);
-            } else if (key == 27){ // escape, end loop
+            } 
+            // ESC, end program
+            else if (key == 27){ 
                 explore = false;
-            } else renderScene(cam, image);
+            } 
+            // ---------------
+            #pragma endregion
+            // ================================
+            
+            else renderScene(cam, image);
         }   
+    #pragma endregion
     } else {
-        namedWindow("RayTracer", WINDOW_AUTOSIZE);// Create a window for display.
-        imshow("RayTracer", image);    
+        // show and save render
+        imshow("RayTrace-Playground", image);
+        imwrite("../generated_images/" + output + ".tiff",image);    
         cv::waitKey(0);
     }
-    #pragma endregion
 }

@@ -75,7 +75,7 @@ CMAKE_BINARY_DIR = /Users/martinpluisch/Development/BasicRayTracing/build
 # Directory level rules for the build root directory
 
 # The main recursive "all" target.
-all: CMakeFiles/RayTracer.dir/all
+all: CMakeFiles/RayTrace-Playground.dir/all
 
 .PHONY : all
 
@@ -85,36 +85,36 @@ preinstall:
 .PHONY : preinstall
 
 # The main recursive "clean" target.
-clean: CMakeFiles/RayTracer.dir/clean
+clean: CMakeFiles/RayTrace-Playground.dir/clean
 
 .PHONY : clean
 
 #=============================================================================
-# Target rules for target CMakeFiles/RayTracer.dir
+# Target rules for target CMakeFiles/RayTrace-Playground.dir
 
 # All Build rule for target.
-CMakeFiles/RayTracer.dir/all:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/RayTracer.dir/build.make CMakeFiles/RayTracer.dir/depend
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/RayTracer.dir/build.make CMakeFiles/RayTracer.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/martinpluisch/Development/BasicRayTracing/build/CMakeFiles --progress-num=1,2 "Built target RayTracer"
-.PHONY : CMakeFiles/RayTracer.dir/all
+CMakeFiles/RayTrace-Playground.dir/all:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RayTrace-Playground.dir/build.make CMakeFiles/RayTrace-Playground.dir/depend
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RayTrace-Playground.dir/build.make CMakeFiles/RayTrace-Playground.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/Users/martinpluisch/Development/BasicRayTracing/build/CMakeFiles --progress-num=1,2 "Built target RayTrace-Playground"
+.PHONY : CMakeFiles/RayTrace-Playground.dir/all
 
 # Build rule for subdir invocation for target.
-CMakeFiles/RayTracer.dir/rule: cmake_check_build_system
+CMakeFiles/RayTrace-Playground.dir/rule: cmake_check_build_system
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/martinpluisch/Development/BasicRayTracing/build/CMakeFiles 2
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/RayTracer.dir/all
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/RayTrace-Playground.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/martinpluisch/Development/BasicRayTracing/build/CMakeFiles 0
-.PHONY : CMakeFiles/RayTracer.dir/rule
+.PHONY : CMakeFiles/RayTrace-Playground.dir/rule
 
 # Convenience name for target.
-RayTracer: CMakeFiles/RayTracer.dir/rule
+RayTrace-Playground: CMakeFiles/RayTrace-Playground.dir/rule
 
-.PHONY : RayTracer
+.PHONY : RayTrace-Playground
 
 # clean rule for target.
-CMakeFiles/RayTracer.dir/clean:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/RayTracer.dir/build.make CMakeFiles/RayTracer.dir/clean
-.PHONY : CMakeFiles/RayTracer.dir/clean
+CMakeFiles/RayTrace-Playground.dir/clean:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RayTrace-Playground.dir/build.make CMakeFiles/RayTrace-Playground.dir/clean
+.PHONY : CMakeFiles/RayTrace-Playground.dir/clean
 
 #=============================================================================
 # Special targets to cleanup operation of make.

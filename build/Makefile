@@ -133,17 +133,17 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named RayTracer
+# Target rules for targets named RayTrace-Playground
 
 # Build rule for target.
-RayTracer: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 RayTracer
-.PHONY : RayTracer
+RayTrace-Playground: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 RayTrace-Playground
+.PHONY : RayTrace-Playground
 
 # fast build rule for target.
-RayTracer/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/RayTracer.dir/build.make CMakeFiles/RayTracer.dir/build
-.PHONY : RayTracer/fast
+RayTrace-Playground/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RayTrace-Playground.dir/build.make CMakeFiles/RayTrace-Playground.dir/build
+.PHONY : RayTrace-Playground/fast
 
 src/RayTracer.o: src/RayTracer.cpp.o
 
@@ -151,7 +151,7 @@ src/RayTracer.o: src/RayTracer.cpp.o
 
 # target to build an object file
 src/RayTracer.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/RayTracer.dir/build.make CMakeFiles/RayTracer.dir/src/RayTracer.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RayTrace-Playground.dir/build.make CMakeFiles/RayTrace-Playground.dir/src/RayTracer.cpp.o
 .PHONY : src/RayTracer.cpp.o
 
 src/RayTracer.i: src/RayTracer.cpp.i
@@ -160,7 +160,7 @@ src/RayTracer.i: src/RayTracer.cpp.i
 
 # target to preprocess a source file
 src/RayTracer.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/RayTracer.dir/build.make CMakeFiles/RayTracer.dir/src/RayTracer.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RayTrace-Playground.dir/build.make CMakeFiles/RayTrace-Playground.dir/src/RayTracer.cpp.i
 .PHONY : src/RayTracer.cpp.i
 
 src/RayTracer.s: src/RayTracer.cpp.s
@@ -169,7 +169,7 @@ src/RayTracer.s: src/RayTracer.cpp.s
 
 # target to generate assembly for a file
 src/RayTracer.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/RayTracer.dir/build.make CMakeFiles/RayTracer.dir/src/RayTracer.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/RayTrace-Playground.dir/build.make CMakeFiles/RayTrace-Playground.dir/src/RayTracer.cpp.s
 .PHONY : src/RayTracer.cpp.s
 
 # Help Target
@@ -180,7 +180,7 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
-	@echo "... RayTracer"
+	@echo "... RayTrace-Playground"
 	@echo "... src/RayTracer.o"
 	@echo "... src/RayTracer.i"
 	@echo "... src/RayTracer.s"

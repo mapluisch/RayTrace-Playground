@@ -2,7 +2,7 @@
 #  CMake options
 ################################################################################
 
-PROJECT(RayTracer)
+PROJECT(RayTrace-Playground)
 
 CMAKE_MINIMUM_REQUIRED(VERSION 3.9)
 

@@ -70,5 +70,6 @@
         "ranges": "cpp",
         "shared_mutex": "cpp",
         "stop_token": "cpp"
-    }
+    },
+    "cmake.configureOnOpen": true
 }
