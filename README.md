@@ -56,7 +56,7 @@ with a combination of the following arguments, used for static scene rendering:
 h,help 					Print usage information
 x,width 				Image width in pixel
 y,height 				Image height in pixel
-s,samples_per_pixel 	Samples per pixel
+s,samples_per_pixel 	  		Samples per pixel
 d,depth 				Maximum recursion depth for each ray
 f,fov 					Camera's vertical field of view
 o,output 				Output file name, without file extension
