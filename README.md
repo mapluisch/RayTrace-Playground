@@ -25,7 +25,8 @@ To explore my RayTrace-Playground, simply call
 `./RayTrace-Playground -e`
 
 ### Controls
-You'll get a console output with all control
+You'll get a console output with all possible inputs, as soon as you start the explore-mode.
+Regardless, here's a quick overview:
 ```
 [W-A-S-D to move and rotate]
 [1-2 to move up and down]
