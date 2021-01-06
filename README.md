@@ -1,6 +1,8 @@
 
 # RayTrace-Playground
 
+![ModifiedCornell](generated_images/modified_cornell.tiff)
+
 Basic RayTracer written in C++, based on the books "Ray Tracing in One Weekend" and "Ray Tracing The Next Week" by Peter Shirley, adapted and extended by me.
 
 Instead of "simply" rendering and saving an output image, I use OpenCV to directly display the rendered output plus read the user's input keys to move around the scene, manipulate the camera and spawn objects.
@@ -64,3 +66,6 @@ Again, to explore the playground:
 e,explore 				Start explorer mode
 ```
 ## Samples
+![1](generated_images/1.tiff)
+![2](generated_images/2.tiff)
+![3](generated_images/3.tiff)
