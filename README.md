@@ -1,7 +1,7 @@
 
 # RayTrace-Playground
 
-![ModifiedCornell](generated_images/modified_cornell.tiff)
+![My modified version of a cornell box](generated_images/modified_cornell.tiff)
 
 Basic RayTracer written in C++, based on the books "Ray Tracing in One Weekend" and "Ray Tracing The Next Week" by Peter Shirley, adapted and extended by me.
 
