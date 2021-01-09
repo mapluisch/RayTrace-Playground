@@ -67,6 +67,7 @@ Again, to explore the playground:
 e,explore 				Start explorer mode
 ```
 ## Samples
-![1](generated_images/1.tiff)
 ![2](generated_images/2.tiff)
-![3](generated_images/3.tiff)
+![6](generated_images/6.tiff)
+![7](generated_images/7.tiff)
+![8](generated_images/8.tiff)

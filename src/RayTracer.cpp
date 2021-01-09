@@ -40,6 +40,8 @@ float rotationAngle = 10;
 float exploreStepSize = 0.1;
 // units to increase/decrease fov per step
 float vfovStep = 1;
+// units to increase/decrease aperture per step
+float apertureStep = 0.01;
 
 #pragma endregion
 // -----------------
@@ -539,11 +541,11 @@ int main(int argc, char* argv[]) {
             // --- APERTURE ---
             // Aperture decrease
             if (key == 'z'){
-                cam.updateAperture(-exploreStepSize);
+                cam.updateAperture(-apertureStep);
             } 
             // Aperture increase
             else if (key == 'u'){
-                cam.updateAperture(exploreStepSize);
+                cam.updateAperture(apertureStep);
             }
             // ----------------
 
