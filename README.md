@@ -15,7 +15,7 @@ I've also included [OpenMP's](https://www.openmp.org) parallel-directives to spe
 - [OpenMP](https://www.openmp.org)
 
 ## Build
-Simply `cd` into the build folder and build via `cmake ..`
+Simply `cd` into the build folder and build via `cmake ..`, followed by `make`.
 
 **Important:** Be aware of the special OpenMP Link- and Include-Directories that I've had to set to make OpenMP run under macOS Big Sur - if you compile my program using a different macOS version / Windows / Linux, remove those entries beforehand.
 
