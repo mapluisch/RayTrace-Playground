@@ -11,9 +11,7 @@ class BVH_Node : public Hittable {
     public:
         BVH_Node();
 
-        BVH_Node(const Hittable_List& list, double time0, double time1)
-            : BVH_Node(list.objects, 0, list.objects.size(), time0, time1)
-        {}
+        BVH_Node(const Hittable_List& list, double time0, double time1) : BVH_Node(list.objects, 0, list.objects.size(), time0, time1) {}
 
         BVH_Node::BVH_Node(std::vector<shared_ptr<Hittable>>& src_objects, size_t start, size_t end, double time0, double time1) {
             auto objects = src_objects; // Create a modifiable array of the source scene objects

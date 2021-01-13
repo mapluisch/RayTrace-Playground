@@ -9,17 +9,15 @@
 
 class Constant_Medium : public Hittable {
     public:
-        Constant_Medium(shared_ptr<Hittable> b, double d, shared_ptr<Texture> a)
-            : boundary(b),
-              neg_inv_density(-1/d),
-              phase_function(make_shared<Isotropic>(a))
-            {}
+        Constant_Medium(shared_ptr<Hittable> b, double d, shared_ptr<Texture> a) : 
+            boundary(b),
+            neg_inv_density(-1/d),
+            phase_function(make_shared<Isotropic>(a)) {}
 
-        Constant_Medium(shared_ptr<Hittable> b, double d, Color c)
-            : boundary(b),
-              neg_inv_density(-1/d),
-              phase_function(make_shared<Isotropic>(c))
-            {}
+        Constant_Medium(shared_ptr<Hittable> b, double d, Color c) : 
+            boundary(b),
+            neg_inv_density(-1/d),
+            phase_function(make_shared<Isotropic>(c)) {}
 
         virtual bool hit(const Ray& r, double t_min, double t_max, Hit& hit) const override;
 

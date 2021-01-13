@@ -58,14 +58,11 @@ SET(MY_PROJECT_SOURCE_DIR src)
 # Also templates, if header and implementation are in distinct files.
 SET(MY_HEADER_FILES
 
-    ${MY_PROJECT_INCLUDE_DIR}/RayTracer.h
-
 )
 
 SET(MY_SOURCE_FILES
 
     ${MY_PROJECT_SOURCE_DIR}/RayTracer.cpp
-    
 )
 
 

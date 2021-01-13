@@ -28,14 +28,6 @@ Hittable_List.h
 Utilities.h
 ../include/Utilities.h
 
-../include/Color.h
-Vec3.h
-../include/Vec3.h
-Utilities.h
-../include/Utilities.h
-iostream
--
-
 ../include/Constant_Medium.h
 Utilities.h
 ../include/Utilities.h
@@ -129,8 +121,6 @@ opencv2/opencv.hpp
 -
 Utilities.h
 /Users/martinpluisch/Development/BasicRayTracing/src/Utilities.h
-Color.h
-/Users/martinpluisch/Development/BasicRayTracing/src/Color.h
 Hittable_List.h
 /Users/martinpluisch/Development/BasicRayTracing/src/Hittable_List.h
 Sphere.h

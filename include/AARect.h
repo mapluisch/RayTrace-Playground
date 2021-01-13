@@ -8,8 +8,8 @@ class XY_Rect : public Hittable {
     public:
         XY_Rect() {}
         // k = Abstand auf Z-Achse
-        XY_Rect(double _x0, double _x1, double _y0, double _y1, double _k, shared_ptr<Material> mat)
-        : x0(_x0), x1(_x1), y0(_y0), y1(_y1), k(_k), mp(mat) {};
+        XY_Rect(double _x0, double _x1, double _y0, double _y1, double _k, shared_ptr<Material> mat) : 
+            x0(_x0), x1(_x1), y0(_y0), y1(_y1), k(_k), mp(mat) {};
 
         virtual bool hit(const Ray& r, double t_min, double t_max, Hit& hit) const override;
 
@@ -29,8 +29,8 @@ class XZ_Rect : public Hittable {
     public:
         XZ_Rect() {}
 
-        XZ_Rect(double _x0, double _x1, double _z0, double _z1, double _k, shared_ptr<Material> mat)
-            : x0(_x0), x1(_x1), z0(_z0), z1(_z1), k(_k), mp(mat) {};
+        XZ_Rect(double _x0, double _x1, double _z0, double _z1, double _k, shared_ptr<Material> mat) :
+            x0(_x0), x1(_x1), z0(_z0), z1(_z1), k(_k), mp(mat) {};
 
         virtual bool hit(const Ray& r, double t_min, double t_max, Hit& hit) const override;
 
@@ -50,8 +50,8 @@ class YZ_Rect : public Hittable {
     public:
         YZ_Rect() {}
 
-        YZ_Rect(double _y0, double _y1, double _z0, double _z1, double _k, shared_ptr<Material> mat)
-            : y0(_y0), y1(_y1), z0(_z0), z1(_z1), k(_k), mp(mat) {};
+        YZ_Rect(double _y0, double _y1, double _z0, double _z1, double _k, shared_ptr<Material> mat) : 
+            y0(_y0), y1(_y1), z0(_z0), z1(_z1), k(_k), mp(mat) {};
 
         virtual bool hit(const Ray& r, double t_min, double t_max, Hit& rec) const override;
 

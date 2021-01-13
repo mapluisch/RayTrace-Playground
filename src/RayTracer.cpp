@@ -4,9 +4,7 @@
 #include <cxxopts.hpp>          // used for nicer argument parsing
 #include <opencv2/opencv.hpp>   // used for displaying rendered frame directly and moving around the scenery
 
-
 #include "Utilities.h"
-#include "Color.h"
 #include "Hittable_List.h"
 #include "Sphere.h"
 #include "Camera.h"
@@ -31,7 +29,7 @@ Hittable_List world;
 Color background(0,0,0);
 int spawnObjectDistance = 1;
 int currentSceneIndex = 0;
-int numOfDifferentScenes = 2;
+int numOfScenes = 3;
 
 // -- Exploration vars --
 // rotation angle in degree per step (= key-press)
@@ -52,41 +50,40 @@ float apertureStep = 0.01;
 /// helper-struct for more efficient mat-pixel settings (per https://stackoverflow.com/questions/23001512/c-and-opencv-get-and-set-pixel-color-to-mat)
 struct RGB {uchar blue; uchar green; uchar red;};
 
-/// Calculates and returns a ray's color in a given scene, for a given maximum recursion-depth
+/// Calculates and returns a ray's color in a given scene, for a given maximum recursion-depth (ray-bounce-limit)
 Color ray_color(const Ray& r, const Color& background, const Hittable& world, int depth) {
     Hit hit;
 
     // If we've exceeded the ray bounce limit, no more light is gathered.
-    if (depth <= 0){
-        return Color(0,0,0);
-    }
+    if (depth <= 0) return Color(0,0,0);
 
     // If the ray hits nothing, return the background color.
-    if (!world.hit(r, 0.001, infinity, hit))
-        return background;
+    if (!world.hit(r, 0.001, infinity, hit)) return background;
 
     Ray scattered;
     Color attenuation;
     Color emitted = hit.mat_ptr->emitted(hit.u, hit.v, hit.p);
 
-    if (!hit.mat_ptr->scatter(r, hit, attenuation, scattered))
-        return emitted;
+    if (!hit.mat_ptr->scatter(r, hit, attenuation, scattered)) return emitted;
 
     return emitted + attenuation * ray_color(scattered, background, world, depth-1);
 }
 
 /// Renders the current world-scene onto a passed-in OpenCV Mat using a passed-in camera object
 void renderScene(Camera& cam, Mat& image){
+    // set max threads for parallel processing
     int threads = omp_get_max_threads();
-    omp_set_num_threads(threads);
-
+    omp_set_num_threads(threads);  
+    // loop over every image-pixel
     for (int j = image_height-1; j >= 0; --j) {
+        // print progress bar in terminal
         float progress = (float) (image_height - j)/ (float) image_height;
         displayProgressbar(progress);
         #pragma omp parallel for 
         for (int i = 0; i < image_width; ++i) {
             Color pixel_color(0, 0, 0);
             #pragma omp parallel for 
+            // create samples at random offset and add their calculated ray_color
             for (int s = 0; s < samples_per_pixel; ++s) {
                 auto u = (i + random_double()) / (image_width-1);
                 auto v = (j + random_double()) / (image_height-1);
@@ -101,9 +98,10 @@ void renderScene(Camera& cam, Mat& image){
             r = sqrt(scale * r);
             g = sqrt(scale * g);
             b = sqrt(scale * b); 
-            
+            // use reference to pixel in cv-matrix for faster color writing
+            // as per https://stackoverflow.com/questions/23001512/c-and-opencv-get-and-set-pixel-color-to-mat
             RGB& rgb = image.ptr<RGB>(image_height - j)[i];
-            rgb.blue = b*255; rgb.green = g*255; rgb.red = r*255;
+            rgb.red = r*255; rgb.green = g*255; rgb.blue = b*255;
         }
     }
 }
@@ -135,8 +133,8 @@ Hittable_List modified_cornell() {
     Hittable_List objects;
     background = Color(0,0,0);
 
+    // material setup
     auto red    = make_shared<Lambertian>(Color(.65, .05, .05));
-    auto blue   = make_shared<Lambertian>(Color(.35, .35, 1));
     auto white  = make_shared<Lambertian>(Color(.73, .73, .73));
     auto green  = make_shared<Lambertian>(Color(.12, .45, .15));
     auto yellow = make_shared<Lambertian>(Color(0.9, 0.8, 0.1));
@@ -144,7 +142,6 @@ Hittable_List modified_cornell() {
     auto mirror = make_shared<Metal>(Color(0.7,0.7,0.7), 0.0);
     auto metal  = make_shared<Metal>(Color(0.2, 0.4, 0.8), 0.3);
     auto glass  = make_shared<Dielectric>(1.5);
-    auto pertext = make_shared<Noise_Texture>(0.1);
 
     // wall left
     objects.add(make_shared<YZ_Rect>(-5, 5, -10, 0, -5, green));
@@ -187,27 +184,6 @@ Hittable_List modified_cornell() {
     return objects;
 }
 
-/// returns a test-scene with (a close-enough :)) H-BRS-Logo
-Hittable_List test_scene() {
-    background = Color(0.9,0.75,0.5);
-    Hittable_List objects;
-
-    auto light = make_shared<Diffuse_Light>(Color(1,1,1));
-    auto material_ground = make_shared<Lambertian>(Color(0.8, 0.8, 0.0));                        
-    auto hbrs_mat = make_shared<Lambertian>(Color(0.28, 0.6, 0.98));
-    
-    // light bar
-    objects.add(make_shared<XY_Rect>(-2, 2, 4, 6, 2, light));
-    // left sphere
-    objects.add(make_shared<Sphere>(Point3(-0.55,    0.0, -1.0),   0.5, hbrs_mat));
-    // "white" inner sphere, use light instead of white for nicer visuals
-    objects.add(make_shared<Sphere>(Point3(-0.55,    0.0, -0.725),   0.3, light));
-    // right sphere
-    objects.add(make_shared<Sphere>(Point3(0.55,    0.0, -1.0),   0.5, hbrs_mat));
-
-    return objects;
-}
-
 /// returns an empty, well-illuminated "playground"
 Hittable_List playground() {
     // set to "night time" for better light-fx
@@ -238,6 +214,20 @@ Hittable_List playground() {
 
     return objects;
 }
+
+/// returns an empty, non-illuminated "playground", useful for spawning and testing lights
+Hittable_List playground_dark() {
+    // set to "night time" for better light-fx
+    background = Color(0,0,0);
+    Hittable_List objects;
+
+    auto ground = make_shared<Lambertian>(Color(0.9, 0.9, 0.9));
+
+    // ground
+    objects.add(make_shared<Sphere>(Point3( 0.0, -100.5, -1.0), 100.0, ground));
+
+    return objects;
+}
 #pragma endregion
 // -------------------------------
 
@@ -253,8 +243,8 @@ void setLowQualityRender() {
 }
 /// Sets 720p - High Quality render settings for pretty fast rendering with a decent output.
 void setHighQualityRender() {
-    samples_per_pixel = 20;
-    max_depth = 20;
+    samples_per_pixel = 50;
+    max_depth = 10;
     image_width = 1280;
     image_height = 720;
 }
@@ -292,10 +282,13 @@ void spawnSphere(Point3 spawnPoint, int material) {
         auto albedo = Color::random();
         auto fuzz = random_double(0, 0.5);
         sphere_material = make_shared<Metal>(albedo, fuzz);
-    } else {
+    } else if (material == 2){
         // glass
         float minRefraction = 1.2;
         sphere_material = make_shared<Dielectric>(random_double() + minRefraction);
+    } else if (material == 3){
+        // light
+        sphere_material = make_shared<Diffuse_Light>(Color::random());
     }   
     world.add(make_shared<Sphere>(center, random_size, sphere_material));
 }
@@ -320,10 +313,13 @@ void spawnBox(Point3 spawnPoint, int material) {
         auto albedo = Color::random();
         auto fuzz = random_double(0, 0.5);
         box_material = make_shared<Metal>(albedo, fuzz);
-    } else {
+    } else if (material == 2){
         // glass
         float minRefraction = 1.2;
         box_material = make_shared<Dielectric>(random_double() + minRefraction);
+    } else if (material == 3){       
+        // light
+        box_material = make_shared<Diffuse_Light>(Color::random());
     }   
     world.add(make_shared<Box>(spawnPoint - Vec3(random_size/2), spawnPoint + Vec3(random_size/2), box_material));
 }
@@ -335,8 +331,7 @@ void spawnBox(Point3 spawnPoint, int material) {
 #pragma region Misc. Helper Functions
 /// Increases current scene-index (used for switching between scenes) and takes care of value-wrap-around
 void increaseSceneIndex(){
-    currentSceneIndex++;
-    if(currentSceneIndex > numOfDifferentScenes){
+    if(++currentSceneIndex >= numOfScenes){
         currentSceneIndex = 0;
     }
 }
@@ -351,14 +346,12 @@ void loadSceneByIndex(){
             world = modified_cornell();
             break;
         case 2:
-            world = test_scene();
-            break;
+            world = playground_dark();
     }
 }
 
 /// Prints a short intro-/tutorial-message for the Explorer-feature
 void printExploreWelcomeMessage(){
-    // show short intro message
     std::cout << BOLDRED << "Welcome to my RayTrace-Playground!\n" << RESET << std::endl;
     std::cout << BOLDWHITE <<   "[W-A-S-D to move and rotate]\n" <<
                                 "[1-2 to move up and down]\n" <<
@@ -369,8 +362,8 @@ void printExploreWelcomeMessage(){
                                 "[8-9-0 to set the sky to night-day-random color]\n" <<
                                 "[TAB to change the current scene]\n\n" <<
 
-                                "[G-H-J to spawn a diffuse-metallic-glass sphere]\n" <<
-                                "[B-N-M to spawn a diffuse-metallic-glass box]\n\n" <<
+                                "[G-H-J-K to spawn a diffuse-metallic-glass-light sphere]\n" <<
+                                "[V-B-N-M to spawn a diffuse-metallic-glass-light box]\n\n" <<
 
                                 "[SPACE to render scene in high quality (720p)]\n" <<
                                 "[ENTER to render scene in really high quality (1080p)]\n" <<
@@ -395,7 +388,6 @@ int main(int argc, char* argv[]) {
         ("d,depth",                 "Maximum recursion depth for each ray",         cxxopts::value<int>())
         ("f,fov",                   "Camera's vertical field of view",              cxxopts::value<double>())
         ("o,output",                "Output file name, without file extension",     cxxopts::value<std::string>())
-
         ("e,explore",               "Start explorer mode",                          cxxopts::value<bool>())
     ;
     #pragma endregion
@@ -467,20 +459,28 @@ int main(int argc, char* argv[]) {
             else if (key == 'j'||key == 'J'){
                 spawnSphere(cam.getCurrentDirection(), 2);
             }
+            // perlin noise sphere
+            else if (key == 'k'||key == 'K'){
+                spawnSphere(cam.getCurrentDirection(), 3);
+            }
             // ------------------------------------
             
             // --- BOX GENERATION + SPAWNING ---
             // diffuse box
-            if (key == 'b'||key == 'B'){
+            if (key == 'v'||key == 'V'){
                 spawnBox(cam.getCurrentDirection(), 0);
             } 
             // metallic box
-            else if (key == 'n'||key == 'N'){
+            else if (key == 'b'||key == 'B'){
                 spawnBox(cam.getCurrentDirection(), 1);
             }
             // glass box
-            else if (key == 'm'||key == 'M'){
+            else if (key == 'n'||key == 'N'){
                 spawnBox(cam.getCurrentDirection(), 2);
+            }
+            // light box
+            else if (key == 'm'||key == 'M'){
+                spawnBox(cam.getCurrentDirection(), 3);
             }
             // ---------------------------------
             #pragma endregion

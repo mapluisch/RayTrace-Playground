@@ -5,7 +5,6 @@ CMakeFiles/RayTrace-Playground.dir/src/RayTracer.cpp.o: ../include/AABB.h
 CMakeFiles/RayTrace-Playground.dir/src/RayTracer.cpp.o: ../include/AARect.h
 CMakeFiles/RayTrace-Playground.dir/src/RayTracer.cpp.o: ../include/Box.h
 CMakeFiles/RayTrace-Playground.dir/src/RayTracer.cpp.o: ../include/Camera.h
-CMakeFiles/RayTrace-Playground.dir/src/RayTracer.cpp.o: ../include/Color.h
 CMakeFiles/RayTrace-Playground.dir/src/RayTracer.cpp.o: ../include/Constant_Medium.h
 CMakeFiles/RayTrace-Playground.dir/src/RayTracer.cpp.o: ../include/Hittable.h
 CMakeFiles/RayTrace-Playground.dir/src/RayTracer.cpp.o: ../include/Hittable_List.h

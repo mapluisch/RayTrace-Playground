@@ -15,8 +15,7 @@ class Solid_Color : public Texture {
         Solid_Color() {}
         Solid_Color(Color c) : color_value(c) {}
 
-        Solid_Color(double red, double green, double blue)
-          : Solid_Color(Color(red,green,blue)) {}
+        Solid_Color(double red, double green, double blue) : Solid_Color(Color(red,green,blue)) {}
 
         virtual Color value(double u, double v, const Vec3& p) const override {
             return color_value;
@@ -30,11 +29,9 @@ class Checker_Texture : public Texture {
     public:
         Checker_Texture() {}
 
-        Checker_Texture(shared_ptr<Texture> _even, shared_ptr<Texture> _odd)
-            : even(_even), odd(_odd) {}
+        Checker_Texture(shared_ptr<Texture> _even, shared_ptr<Texture> _odd) : even(_even), odd(_odd) {}
 
-        Checker_Texture(Color c1, Color c2)
-            : even(make_shared<Solid_Color>(c1)) , odd(make_shared<Solid_Color>(c2)) {}
+        Checker_Texture(Color c1, Color c2) : even(make_shared<Solid_Color>(c1)) , odd(make_shared<Solid_Color>(c2)) {}
 
         virtual Color value(double u, double v, const Point3& p) const override {
             auto sines = sin(10*p.x())*sin(10*p.y())*sin(10*p.z());

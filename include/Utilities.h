@@ -8,10 +8,7 @@
 #include <random>
 #include <string>
 
-
-
 // Usings
-
 using std::shared_ptr;
 using std::make_shared;
 using std::sqrt;
@@ -57,7 +54,7 @@ void displayProgressbar(float progress) {
     float val = (progress * 100);
     int lpad = (int) (progress * PBWIDTH);
     int rpad = PBWIDTH - lpad;
-    printf("\r[%sRendering... %3.2f%%%s] [%s%.*s%*s%s]", BOLDYELLOW, val, RESET, BLUE, lpad, PBSTR, rpad, "", RESET);
+    printf("\r[%sRendering... %3.3f%%%s] [%s%.*s%*s%s]", BOLDYELLOW, val, RESET, BLUE, lpad, PBSTR, rpad, "", RESET);
     fflush(stdout);
 }
 
